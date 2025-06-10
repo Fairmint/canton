@@ -1,0 +1,19 @@
+module TestIssuerCreateStockClass where
+
+import Setup()
+import Issuer()
+import Daml.Script()
+import DA.Optional()
+import StockClass()
+
+-- Happy Case --
+
+-- happyCase = script do
+--   TestUsers{fairmint, issuer, rando} <- setupUsers
+--   issuerCid <- createIssuer fairmint issuer
+--   (stockClass, newIssuerCid) <- exerciseCmd issuer CreateStockClass
+--     with
+--       stockClassType = StockClass.StockClassType.CommonStock
+--       shares = 100
+
+--   pure()

@@ -1,0 +1,5 @@
+tail: 0
+timestamps: short
+# include: "(?i)fairmint"
+color: always
+namespace: validator1
