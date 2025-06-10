@@ -1,0 +1,25 @@
+module IssuerAuthorization where
+
+import Issuer
+
+template IssuerAuthorization
+  with
+    fairmint: Party
+    issuer: Party
+  where
+    signatory fairmint
+    observer issuer
+
+    choice CreateIssuer: ContractId Issuer
+      with
+        name: Text
+        authorizedShares: Int
+      controller issuer
+      do
+        create Issuer
+          with
+            fairmint = fairmint
+            issuer = issuer
+            name = name
+            authorizedShares = authorizedShares
+            issuedShares = 0

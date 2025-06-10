@@ -1,0 +1,44 @@
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/openjdk:23.0.2
+    steps:
+      - checkout
+      - run:
+          name: Install DAML
+          command: |
+            curl -sSL https://get.daml.com/ | sh -s 3.3.0-snapshot.20250507.0
+            echo 'export PATH=$HOME/.daml/bin:$PATH' >> "$BASH_ENV"
+      - run:
+          name: Install Node.js
+          command: |
+            # Download and install nvm:
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+            # in lieu of restarting the shell
+            \. "$HOME/.nvm/nvm.sh"
+
+            # Download and install Node.js:
+            nvm install 22.16.0
+
+            # Update PATH for subsequent steps:
+            echo 'export NVM_DIR="$HOME/.nvm"' >> "$BASH_ENV"
+            echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> "$BASH_ENV"
+            echo 'export PATH="$NVM_DIR/versions/node/v22.16.0/bin:$PATH"' >> "$BASH_ENV"
+
+            # Verify the Node.js version:
+            node -v # Should print "v22.16.0".
+            nvm current # Should print "v22.16.0".
+
+            # Verify npm version:
+            npm -v # Should print "10.9.2".
+      - run:
+          name: Build and Test
+          command: npm run test
+
+workflows:
+  build-and-test-workflow:
+    jobs:
+      - build-and-test

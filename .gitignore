@@ -1,0 +1,19 @@
+# DAML artifacts
+.daml/
+daml.js/
+build/
+*.log
+log/
+
+# Node artifacts
+node_modules/
+package-lock.json
+
+# Custom artifacts
+logs/
+
+# Local config
+.vscode/
+.DS_Store
+.env
+.secrets/
