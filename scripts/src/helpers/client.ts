@@ -191,8 +191,34 @@ export class TransferAgentClient {
             const partyId = response.partyDetails.party;
 
             // Set user rights for the newly created party
-            // TODO: Not sure if this is needed, did not solve the auth issue
-            await this.makePostRequest(
+            await this.setUserRights(partyId);
+
+            return {partyId, isNewParty: true};
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data;
+                // Check if this is a "party already exists" error
+                if (errorData?.cause?.includes('Party already exists')) {
+                    // Look up the party ID from the ledger
+                    const parties = await this.getParties();
+                    const existingParty = parties.partyDetails.find(p => p.party.startsWith(`FM:${partyIdHint}`));
+                    if (existingParty) {
+                        // Set user rights for the newly created party
+                        await this.setUserRights(existingParty.party);
+
+                        return { partyId: existingParty.party, isNewParty: false };
+                    }
+                }
+                const errorMessage = errorData ? JSON.stringify(errorData, null, 2) : error.message;
+                throw new Error(`Failed to create party: ${errorMessage}`);
+            }
+            throw error;
+        }
+    }
+
+    async setUserRights(partyId: string): Promise<void> {
+        const headers = await this.getHeaders();
+        await this.makePostRequest(
                 `${this.config.ledgerUrl}/users/${this.config.fairmintUserId}/rights`,
                 {
                     userId: this.config.fairmintUserId,
@@ -211,26 +237,8 @@ export class TransferAgentClient {
                 },
                 headers
             );
-
-            return {partyId, isNewParty: true};
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const errorData = error.response?.data;
-                // Check if this is a "party already exists" error
-                if (errorData?.cause?.includes('Party already exists')) {
-                    // Look up the party ID from the ledger
-                    const parties = await this.getParties();
-                    const existingParty = parties.partyDetails.find(p => p.party.startsWith(`FM:${partyIdHint}`));
-                    if (existingParty) {
-                        return { partyId: existingParty.party, isNewParty: false };
-                    }
-                }
-                const errorMessage = errorData ? JSON.stringify(errorData, null, 2) : error.message;
-                throw new Error(`Failed to create party: ${errorMessage}`);
-            }
-            throw error;
         }
-    }
+
 
     private async getParties(): Promise<{ partyDetails: Array<{ party: string, isLocal: boolean, localMetadata: { resourceVersion: string, annotations: Record<string, any> }, identityProviderId: string }> }> {
         try {

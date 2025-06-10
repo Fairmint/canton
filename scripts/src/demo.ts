@@ -11,12 +11,8 @@ async function main() {
         console.log(`Created FairmintAdminService with contract ID: ${contractId}`);
 
         // Pre-req: Create new party for issuer [Once per issuer]
-        const {partyId: issuerPartyId, isNewParty} = await client.createParty('Tester010');
-        if(isNewParty) {
-            console.log(`Created new party for issuer with ID: ${issuerPartyId}`);
-        } else {
-            console.log(`Reused existing party for issuer with ID: ${issuerPartyId}`);
-        }
+        const {partyId: issuerPartyId, isNewParty} = await client.createParty('Test001');
+        console.log(`${isNewParty ? 'Created' : 'Reused'} party for issuer with ID: ${issuerPartyId}`);
 
         // 1.1: Authorize issuer [Once per issuer]
         const authorizationContractId = await client.authorizeIssuer(contractId, issuerPartyId);
@@ -32,10 +28,10 @@ async function main() {
         console.log(`Successfully created issuer with contract ID: ${issuerContractId}`);
 
         // Pre-req: Create parties for Bob and Alice
-        const {partyId: bobPartyId} = await client.createParty('Bob');
-        console.log(`Created party for Bob with ID: ${bobPartyId}`);
-        const {partyId: alicePartyId} = await client.createParty('Alice');
-        console.log(`Created party for Alice with ID: ${alicePartyId}`);
+        const {partyId: alicePartyId, isNewParty: isAliceNewParty} = await client.createParty('Alice');
+        console.log(`${isAliceNewParty ? 'Created' : 'Reused'} party for Alice with ID: ${alicePartyId}`);
+        const {partyId: bobPartyId, isNewParty: isBobNewParty} = await client.createParty('Bob');
+        console.log(`${isBobNewParty ? 'Created' : 'Reused'} party for Bob with ID: ${bobPartyId}`);
 
         // 2.1: Issuer creates stockclass "Common" with 10M authorized shares
         const {stockClassContractId} = await client.createStockClass(
