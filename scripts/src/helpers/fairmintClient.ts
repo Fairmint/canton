@@ -15,13 +15,15 @@ export class FairmintClient {
     }
 
     async createFairmintAdminService(): Promise<CreateContractResponse> {
-        return this.client.createCommand({
+        const response = await this.client.createCommand({
             templateId: TEMPLATES.FAIRMINT_ADMIN_SERVICE,
             createArguments: {
                 fairmint: this.client.getFairmintPartyId(),
             },
             actAs: [this.client.getFairmintPartyId()],
         });
+        console.debug(`Created FairmintAdminService with contract ID: ${response.contractId}`);
+        return response;
     }
 
     async authorizeIssuer(contractId: string, issuerPartyId: string): Promise<string> {
@@ -37,11 +39,14 @@ export class FairmintClient {
 
         // Extract the IssuerAuthorization contract ID from the response
         const authorizationContractId = response.transactionTree.eventsById['0'].ExercisedTreeEvent.value.exerciseResult;
+        console.debug(`Successfully authorized issuer with contract ID: ${authorizationContractId}`);
         return authorizationContractId;
     }
 
     async createParty(partyIdHint: string) {
-        return this.client.createParty(partyIdHint);
+        const response = await this.client.createParty(partyIdHint);
+        console.debug(`${response.isNewParty ? 'Created' : 'Reused'} party for ${partyIdHint} with ID: ${response.partyId}`);
+        return response;
     }
 
     async acceptIssuerAuthorization(authorizationContractId: string, name: string, authorizedShares: number, issuerPartyId: string): Promise<string> {
@@ -58,6 +63,7 @@ export class FairmintClient {
 
         // Extract the Issuer contract ID from the response
         const issuerContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
+        console.debug(`Successfully created issuer with contract ID: ${issuerContractId}`);
         return issuerContractId;
     }
 
@@ -74,8 +80,9 @@ export class FairmintClient {
         }) as any;
 
         // Extract both the StockClass and updated Issuer contract IDs from the response
-        const stockClassContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
-        const updatedIssuerContractId = response.transactionTree.eventsById['2'].CreatedTreeEvent.value.contractId;
+        const stockClassContractId = response.transactionTree.eventsById['2'].CreatedTreeEvent.value.contractId;
+        const updatedIssuerContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
+        console.debug(`Created stock class with contract ID: ${stockClassContractId}`);
         return { stockClassContractId, updatedIssuerContractId };
     }
 
@@ -94,6 +101,7 @@ export class FairmintClient {
         // Extract both the IssueStockClassProposal and updated StockClass contract IDs from the response
         const proposalContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
         const updatedStockClassContractId = response.transactionTree.eventsById['2'].CreatedTreeEvent.value.contractId;
+        console.debug(`Proposed stock issuance to ${recipientPartyId} with proposal ID: ${proposalContractId}`);
         return { proposalContractId, updatedStockClassContractId };
     }
 
@@ -108,6 +116,7 @@ export class FairmintClient {
 
         // Extract the StockPosition contract ID from the response
         const stockPositionContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
+        console.debug(`${recipientPartyId} accepted stock issuance and received position with ID: ${stockPositionContractId}`);
         return stockPositionContractId;
     }
 
@@ -126,12 +135,13 @@ export class FairmintClient {
         // Extract both the TransferProposal and updated StockPosition contract IDs from the response
         const transferProposalContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
         const updatedStockPositionContractId = response.transactionTree.eventsById['2'].CreatedTreeEvent.value.contractId;
+        console.debug(`${ownerPartyId} proposed transfer to ${recipientPartyId} with proposal ID: ${transferProposalContractId}`);
         return { transferProposalContractId, updatedStockPositionContractId };
     }
 
     async acceptTransfer(transferProposalContractId: string, recipientPartyId: string): Promise<string> {
         const response = await this.client.exerciseCommand({
-            templateId: '#OpenCapTable-v00:StockPosition:TransferProposal',
+            templateId: '#OpenCapTable-v00:StockPosition:StockTransferProposal',
             contractId: transferProposalContractId,
             choice: 'AcceptTransfer',
             choiceArgument: {},
@@ -140,6 +150,7 @@ export class FairmintClient {
 
         // Extract the new StockPosition contract ID from the response
         const stockPositionContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
+        console.debug(`${recipientPartyId} accepted transfer and received position with ID: ${stockPositionContractId}`);
         return stockPositionContractId;
     }
 }
