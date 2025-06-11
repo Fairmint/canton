@@ -75,10 +75,20 @@ export default function ContractExplorer() {
   const [events, setEvents] = useState<ContractEvents | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [contractId, setContractId] = useState('');
+  const [contractId, setContractId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastContractId') || '';
+    }
+    return '';
+  });
   const [transactionTree, setTransactionTree] = useState<TransactionTree | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
-  const [shouldFetch, setShouldFetch] = useState(false);
+  const [shouldFetch, setShouldFetch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('lastContractId');
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (shouldFetch && contractId) {
@@ -86,6 +96,13 @@ export default function ContractExplorer() {
       setShouldFetch(false);
     }
   }, [contractId, shouldFetch]);
+
+  const handleContractIdChange = (value: string) => {
+    setContractId(value);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastContractId', value);
+    }
+  };
 
   const fetchEvents = async () => {
     if (!contractId) {
@@ -144,7 +161,7 @@ export default function ContractExplorer() {
   };
 
   const handleContractIdClick = (contractId: string) => {
-    setContractId(contractId);
+    handleContractIdChange(contractId);
     setShouldFetch(true);
   };
 
@@ -160,7 +177,7 @@ export default function ContractExplorer() {
               type="text"
               id="contractId"
               value={contractId}
-              onChange={(e) => setContractId(e.target.value)}
+              onChange={(e) => handleContractIdChange(e.target.value)}
               className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
               placeholder="Enter contract ID"
               required
