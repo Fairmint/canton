@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import EventDetails from './EventDetails';
 
 interface CreatedEvent {
   createdEvent: {
@@ -77,6 +78,14 @@ export default function ContractExplorer() {
   const [contractId, setContractId] = useState('');
   const [transactionTree, setTransactionTree] = useState<TransactionTree | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
+  const [shouldFetch, setShouldFetch] = useState(false);
+
+  useEffect(() => {
+    if (shouldFetch && contractId) {
+      fetchEvents();
+      setShouldFetch(false);
+    }
+  }, [contractId, shouldFetch]);
 
   const fetchEvents = async () => {
     if (!contractId) {
@@ -127,11 +136,16 @@ export default function ContractExplorer() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchEvents();
+    setShouldFetch(true);
   };
 
   const handleOffsetClick = (offset: string) => {
     fetchTransactionTree(offset);
+  };
+
+  const handleContractIdClick = (contractId: string) => {
+    setContractId(contractId);
+    setShouldFetch(true);
   };
 
   return (
@@ -177,41 +191,11 @@ export default function ContractExplorer() {
             {events.created && (
               <div className="mb-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Created Event</h3>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">
-                    <strong>Template ID:</strong> {events.created.createdEvent.templateId}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Package:</strong> {events.created.createdEvent.packageName}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Created At:</strong> {new Date(events.created.createdEvent.createdAt).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Signatories:</strong> {events.created.createdEvent.signatories.join(', ')}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Observers:</strong> {events.created.createdEvent.observers.join(', ') || 'None'}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Offset:</strong>{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        events.created && handleOffsetClick(events.created.createdEvent.offset);
-                      }}
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      {events.created?.createdEvent.offset}
-                    </button>
-                  </p>
-                  <div className="mt-2">
-                    <strong className="text-sm text-gray-500">Create Argument:</strong>
-                    <pre className="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                      {JSON.stringify(events.created.createdEvent.createArgument, null, 2)}
-                    </pre>
-                  </div>
-                </div>
+                <EventDetails
+                  data={events.created.createdEvent}
+                  onOffsetClick={handleOffsetClick}
+                  onContractIdClick={handleContractIdClick}
+                />
               </div>
             )}
 
@@ -272,61 +256,48 @@ export default function ContractExplorer() {
 
               <div>
                 <h4 className="text-md font-medium text-gray-900 mb-2">Events</h4>
-                {Object.entries(transactionTree.transaction.eventsById).map(([nodeId, event]) => (
-                  <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
-                    {event.ExercisedTreeEvent && (
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-2">Exercise Event</h5>
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-500">
-                            <strong>Template ID:</strong> {event.ExercisedTreeEvent.value.templateId}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            <strong>Choice:</strong> {event.ExercisedTreeEvent.value.choice}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            <strong>Acting Parties:</strong> {event.ExercisedTreeEvent.value.actingParties.join(', ')}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            <strong>Witness Parties:</strong> {event.ExercisedTreeEvent.value.witnessParties.join(', ')}
-                          </p>
-                          <div className="mt-2">
-                            <strong className="text-sm text-gray-500">Choice Argument:</strong>
-                            <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
-                              {JSON.stringify(event.ExercisedTreeEvent.value.choiceArgument, null, 2)}
-                            </pre>
+                {Object.entries(transactionTree.transaction.eventsById).map(([nodeId, event]) => {
+                  return (
+                    <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
+                      {event.ExercisedTreeEvent && (
+                        <div>
+                          <h5 className="font-medium text-gray-900 mb-2">Exercise Event</h5>
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-500">
+                              <strong>Template ID:</strong> {event.ExercisedTreeEvent.value.templateId}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              <strong>Choice:</strong> {event.ExercisedTreeEvent.value.choice}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              <strong>Acting Parties:</strong> {event.ExercisedTreeEvent.value.actingParties.join(', ')}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              <strong>Witness Parties:</strong> {event.ExercisedTreeEvent.value.witnessParties.join(', ')}
+                            </p>
+                            <div className="mt-2">
+                              <strong className="text-sm text-gray-500">Choice Argument:</strong>
+                              <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
+                                {JSON.stringify(event.ExercisedTreeEvent.value.choiceArgument, null, 2)}
+                              </pre>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {event.CreatedTreeEvent && (
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-2">Create Event</h5>
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-500">
-                            <strong>Template ID:</strong> {event.CreatedTreeEvent.value.templateId}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            <strong>Created At:</strong> {new Date(event.CreatedTreeEvent.value.createdAt).toLocaleString()}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            <strong>Signatories:</strong> {event.CreatedTreeEvent.value.signatories.join(', ')}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            <strong>Observers:</strong> {event.CreatedTreeEvent.value.observers.join(', ') || 'None'}
-                          </p>
-                          <div className="mt-2">
-                            <strong className="text-sm text-gray-500">Create Argument:</strong>
-                            <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
-                              {JSON.stringify(event.CreatedTreeEvent.value.createArgument, null, 2)}
-                            </pre>
-                          </div>
+                      {event.CreatedTreeEvent && (
+                        <div>
+                          <h5 className="font-medium text-gray-900 mb-2">Create Event</h5>
+                          <EventDetails
+                            data={event.CreatedTreeEvent.value}
+                            onOffsetClick={handleOffsetClick}
+                            onContractIdClick={handleContractIdClick}
+                          />
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
