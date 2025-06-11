@@ -81,7 +81,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({
       {createArgument && (
         <div className="mt-2">
           <strong className="text-sm text-gray-500">Create Argument:</strong>
-          <pre className="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded">
+          <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
             {JSON.stringify(createArgument, null, 2)}
           </pre>
         </div>
