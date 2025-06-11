@@ -195,6 +195,7 @@ export default function ContractExplorer() {
                   data={events.created.createdEvent}
                   onOffsetClick={handleOffsetClick}
                   onContractIdClick={handleContractIdClick}
+                  currentContractId={contractId}
                 />
               </div>
             )}
@@ -202,29 +203,12 @@ export default function ContractExplorer() {
             {events.archived && (
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Archived Event</h3>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">
-                    <strong>Template ID:</strong> {events.archived.archivedEvent.templateId}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Package:</strong> {events.archived.archivedEvent.packageName}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Witness Parties:</strong> {events.archived.archivedEvent.witnessParties.join(', ')}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    <strong>Offset:</strong>{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        events.archived && handleOffsetClick(events.archived.archivedEvent.offset);
-                      }}
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      {events.archived?.archivedEvent.offset}
-                    </button>
-                  </p>
-                </div>
+                <EventDetails
+                  data={events.archived.archivedEvent}
+                  onOffsetClick={handleOffsetClick}
+                  onContractIdClick={handleContractIdClick}
+                  currentContractId={contractId}
+                />
               </div>
             )}
           </div>
@@ -292,6 +276,7 @@ export default function ContractExplorer() {
                             data={event.CreatedTreeEvent.value}
                             onOffsetClick={handleOffsetClick}
                             onContractIdClick={handleContractIdClick}
+                            currentContractId={contractId}
                           />
                         </div>
                       )}
