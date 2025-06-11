@@ -18,3 +18,7 @@ logs/
 .DS_Store
 .env
 .secrets/
+
+# UI
+.next/
+next-env.d.ts

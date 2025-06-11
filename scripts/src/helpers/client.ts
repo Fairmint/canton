@@ -256,4 +256,42 @@ export class TransferAgentClient {
             throw error;
         }
     }
+
+    async getEventsByContractId(contractId: string): Promise<any> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await this.makePostRequest(
+                `${this.config.ledgerUrl}/events/events-by-contract-id`,
+                {
+                    contractId,
+                    requestingParties: [this.config.fairmintPartyId]
+                },
+                headers
+            );
+            return response;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Failed to get events by contract ID: ${errorData}`);
+            }
+            throw error;
+        }
+    }
+
+    async getTransactionTreeByOffset(offset: string): Promise<any> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await this.axiosInstance.get(
+                `${this.config.ledgerUrl}/updates/transaction-tree-by-offset/${offset}?parties=${this.config.fairmintPartyId}`,
+                { headers }
+            );
+            return response;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Failed to get transaction tree by offset: ${errorData}`);
+            }
+            throw error;
+        }
+    }
 }
