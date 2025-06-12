@@ -27,15 +27,17 @@ const truncateContractId = (contractId: string): string => {
   return `${contractId.slice(0, 6)}..${contractId.slice(-6)}`;
 };
 
-const truncateTemplateId = (templateId: string): string => {
+const truncateTemplateId = (templateId: string): { truncatedId: string; boldPart: string } => {
   const parts = templateId.split(':');
-  if (parts.length < 2) return templateId;
+  if (parts.length < 2) return { truncatedId: templateId, boldPart: '' };
 
   const hash = parts[0];
-  if (hash.length <= 12) return templateId;
+  const boldPart = parts[parts.length - 1];
+  const truncatedHash = hash.length <= 12 ? hash : `${hash.slice(0, 6)}..${hash.slice(-6)}`;
+  const middleParts = parts.slice(1, -1);
+  const truncatedId = [truncatedHash, ...middleParts].join(':');
 
-  const truncatedHash = `${hash.slice(0, 6)}..${hash.slice(-6)}`;
-  return [truncatedHash, ...parts.slice(1)].join(':');
+  return { truncatedId, boldPart };
 };
 
 const truncatePartyId = (partyId: string): string => {
@@ -133,24 +135,26 @@ const EventDetails: React.FC<EventDetailsProps> = ({
     witnessParties,
   } = data;
 
-  const hasPartyDetails = (signatories?.length ?? 0) > 0 ||
-                         (observers?.length ?? 0) > 0 ||
-                         (witnessParties?.length ?? 0) > 0 ||
-                         (actingParties?.length ?? 0) > 0;
-
   return (
     <div className="space-y-2">
-      {packageName && (
-        <p className="text-sm text-gray-500">
-          <strong>Package:</strong> {packageName}
-        </p>
-      )}
       <p className="text-sm text-gray-500">
         <strong>Template ID:</strong>{' '}
-        <TruncatedText
-          displayText={truncateTemplateId(templateId)}
-          fullText={templateId}
-        />
+        {(() => {
+          const { truncatedId, boldPart } = truncateTemplateId(templateId);
+          return (
+            <>
+              <TruncatedText
+                displayText={truncatedId}
+                fullText={templateId}
+              />
+              {boldPart && (
+                <>
+                  :<strong>{boldPart}</strong>
+                </>
+              )}
+            </>
+          );
+        })()}
       </p>
       {contractId && (
         <p className="text-sm text-gray-500">
@@ -162,11 +166,6 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           />
         </p>
       )}
-      {createdAt && (
-        <p className="text-sm text-gray-500">
-          <strong>Created At:</strong> {new Date(createdAt).toLocaleString()}
-        </p>
-      )}
       {createArgument && (
         <div className="mt-2">
           <strong className="text-sm text-gray-500">Create Argument:</strong>
@@ -176,16 +175,15 @@ const EventDetails: React.FC<EventDetailsProps> = ({
         </div>
       )}
       {choice && (
-        <p className="text-sm text-gray-500">
-          <strong>Choice:</strong> {choice}
-        </p>
-      )}
-      {choiceArgument && (
-        <div className="mt-2">
-          <strong className="text-sm text-gray-500">Choice Argument:</strong>
-          <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
-            {JSON.stringify(choiceArgument, null, 2)}
-          </pre>
+        <div className="text-sm text-gray-500">
+          <strong>Choice:</strong>
+          {choiceArgument ? (
+            <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
+              {choice}({JSON.stringify(choiceArgument, null, 2)})
+            </pre>
+          ) : (
+            <span className="ml-1">{choice}</span>
+          )}
         </div>
       )}
       {offset && onOffsetClick && (
@@ -200,47 +198,55 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           </button>
         </p>
       )}
-      {hasPartyDetails && (
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setShowDetails(!showDetails)}
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            {showDetails ? (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-                Hide Details
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                Show Details
-              </>
-            )}
-          </button>
-          {showDetails && (
-            <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
-              {actingParties && actingParties.length > 0 && (
-                <PartyList parties={actingParties} label="Acting Parties" />
-              )}
-              {signatories && signatories.length > 0 && (
-                <PartyList parties={signatories} label="Signatories" />
-              )}
-              {observers && observers.length > 0 && (
-                <PartyList parties={observers} label="Observers" />
-              )}
-              {witnessParties && witnessParties.length > 0 && (
-                <PartyList parties={witnessParties} label="Witness Parties" />
-              )}
-            </div>
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => setShowDetails(!showDetails)}
+          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+        >
+          {showDetails ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              Hide Details
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Show Details
+            </>
           )}
-        </div>
-      )}
+        </button>
+        {showDetails && (
+          <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
+            {packageName && (
+              <p className="text-sm text-gray-500">
+                <strong>Package:</strong> {packageName}
+              </p>
+            )}
+            {createdAt && (
+              <p className="text-sm text-gray-500">
+                <strong>Created At:</strong> {new Date(createdAt).toLocaleString()}
+              </p>
+            )}
+            {actingParties && actingParties.length > 0 && (
+              <PartyList parties={actingParties} label="Acting Parties" />
+            )}
+            {signatories && signatories.length > 0 && (
+              <PartyList parties={signatories} label="Signatories" />
+            )}
+            {observers && observers.length > 0 && (
+              <PartyList parties={observers} label="Observers" />
+            )}
+            {witnessParties && witnessParties.length > 0 && (
+              <PartyList parties={witnessParties} label="Witness Parties" />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
