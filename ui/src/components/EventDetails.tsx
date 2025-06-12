@@ -135,19 +135,8 @@ const EventDetails: React.FC<EventDetailsProps> = ({
     witnessParties,
   } = data;
 
-  const hasPartyDetails = (signatories?.length ?? 0) > 0 ||
-                         (observers?.length ?? 0) > 0 ||
-                         (witnessParties?.length ?? 0) > 0 ||
-                         (actingParties?.length ?? 0) > 0 ||
-                         !!createdAt;
-
   return (
     <div className="space-y-2">
-      {packageName && (
-        <p className="text-sm text-gray-500">
-          <strong>Package:</strong> {packageName}
-        </p>
-      )}
       <p className="text-sm text-gray-500">
         <strong>Template ID:</strong>{' '}
         {(() => {
@@ -209,52 +198,55 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           </button>
         </p>
       )}
-      {hasPartyDetails && (
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setShowDetails(!showDetails)}
-            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            {showDetails ? (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-                Hide Details
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                Show Details
-              </>
-            )}
-          </button>
-          {showDetails && (
-            <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
-              {createdAt && (
-                <p className="text-sm text-gray-500">
-                  <strong>Created At:</strong> {new Date(createdAt).toLocaleString()}
-                </p>
-              )}
-              {actingParties && actingParties.length > 0 && (
-                <PartyList parties={actingParties} label="Acting Parties" />
-              )}
-              {signatories && signatories.length > 0 && (
-                <PartyList parties={signatories} label="Signatories" />
-              )}
-              {observers && observers.length > 0 && (
-                <PartyList parties={observers} label="Observers" />
-              )}
-              {witnessParties && witnessParties.length > 0 && (
-                <PartyList parties={witnessParties} label="Witness Parties" />
-              )}
-            </div>
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => setShowDetails(!showDetails)}
+          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+        >
+          {showDetails ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              Hide Details
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Show Details
+            </>
           )}
-        </div>
-      )}
+        </button>
+        {showDetails && (
+          <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
+            {packageName && (
+              <p className="text-sm text-gray-500">
+                <strong>Package:</strong> {packageName}
+              </p>
+            )}
+            {createdAt && (
+              <p className="text-sm text-gray-500">
+                <strong>Created At:</strong> {new Date(createdAt).toLocaleString()}
+              </p>
+            )}
+            {actingParties && actingParties.length > 0 && (
+              <PartyList parties={actingParties} label="Acting Parties" />
+            )}
+            {signatories && signatories.length > 0 && (
+              <PartyList parties={signatories} label="Signatories" />
+            )}
+            {observers && observers.length > 0 && (
+              <PartyList parties={observers} label="Observers" />
+            )}
+            {witnessParties && witnessParties.length > 0 && (
+              <PartyList parties={witnessParties} label="Witness Parties" />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
