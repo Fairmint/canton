@@ -263,26 +263,12 @@ export default function ContractExplorer() {
                       {event.ExercisedTreeEvent && (
                         <div>
                           <h5 className="font-medium text-gray-900 mb-2">Exercise Event</h5>
-                          <div className="space-y-2">
-                            <p className="text-sm text-gray-500">
-                              <strong>Template ID:</strong> {event.ExercisedTreeEvent.value.templateId}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              <strong>Choice:</strong> {event.ExercisedTreeEvent.value.choice}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              <strong>Acting Parties:</strong> {event.ExercisedTreeEvent.value.actingParties.join(', ')}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              <strong>Witness Parties:</strong> {event.ExercisedTreeEvent.value.witnessParties.join(', ')}
-                            </p>
-                            <div className="mt-2">
-                              <strong className="text-sm text-gray-500">Choice Argument:</strong>
-                              <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
-                                {JSON.stringify(event.ExercisedTreeEvent.value.choiceArgument, null, 2)}
-                              </pre>
-                            </div>
-                          </div>
+                          <EventDetails
+                            data={event.ExercisedTreeEvent.value}
+                            onOffsetClick={handleOffsetClick}
+                            onContractIdClick={handleContractIdClick}
+                            currentContractId={contractId}
+                          />
                         </div>
                       )}
 
