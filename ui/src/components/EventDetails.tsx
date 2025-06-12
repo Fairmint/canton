@@ -27,15 +27,17 @@ const truncateContractId = (contractId: string): string => {
   return `${contractId.slice(0, 6)}..${contractId.slice(-6)}`;
 };
 
-const truncateTemplateId = (templateId: string): string => {
+const truncateTemplateId = (templateId: string): { truncatedId: string; boldPart: string } => {
   const parts = templateId.split(':');
-  if (parts.length < 2) return templateId;
+  if (parts.length < 2) return { truncatedId: templateId, boldPart: '' };
 
   const hash = parts[0];
-  if (hash.length <= 12) return templateId;
+  const boldPart = parts[parts.length - 1];
+  const truncatedHash = hash.length <= 12 ? hash : `${hash.slice(0, 6)}..${hash.slice(-6)}`;
+  const middleParts = parts.slice(1, -1);
+  const truncatedId = [truncatedHash, ...middleParts].join(':');
 
-  const truncatedHash = `${hash.slice(0, 6)}..${hash.slice(-6)}`;
-  return [truncatedHash, ...parts.slice(1)].join(':');
+  return { truncatedId, boldPart };
 };
 
 const truncatePartyId = (partyId: string): string => {
@@ -148,10 +150,22 @@ const EventDetails: React.FC<EventDetailsProps> = ({
       )}
       <p className="text-sm text-gray-500">
         <strong>Template ID:</strong>{' '}
-        <TruncatedText
-          displayText={truncateTemplateId(templateId)}
-          fullText={templateId}
-        />
+        {(() => {
+          const { truncatedId, boldPart } = truncateTemplateId(templateId);
+          return (
+            <>
+              <TruncatedText
+                displayText={truncatedId}
+                fullText={templateId}
+              />
+              {boldPart && (
+                <>
+                  :<strong>{boldPart}</strong>
+                </>
+              )}
+            </>
+          );
+        })()}
       </p>
       {contractId && (
         <p className="text-sm text-gray-500">
