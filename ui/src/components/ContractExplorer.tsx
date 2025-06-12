@@ -178,7 +178,7 @@ export default function ContractExplorer() {
               id="contractId"
               value={contractId}
               onChange={(e) => handleContractIdChange(e.target.value)}
-              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
               placeholder="Enter contract ID"
               required
             />
