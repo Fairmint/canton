@@ -64,8 +64,32 @@ export class TransferAgentClient {
             return response.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data;
+
+                // Check for security-sensitive error
+                if (errorData?.cause === "A security-sensitive error has been received") {
+                    // Clear the bearer token to force re-authentication
+                    this.bearerToken = null;
+
+                    // Get new headers with fresh authentication
+                    const newHeaders = await this.getHeaders();
+
+                    // Retry the request once with new authentication
+                    try {
+                        const retryResponse = await this.axiosInstance.post<T>(url, data, { headers: newHeaders });
+                        await this.logRequestResponse(url, data, retryResponse.data);
+                        return retryResponse.data;
+                    } catch (retryError: unknown) {
+                        // If retry fails, log and throw the original error
+                        await this.logRequestResponse(url, data, {
+                            error: axios.isAxiosError(retryError) ? retryError.response?.data || retryError.message : retryError
+                        });
+                        throw error;
+                    }
+                }
+
                 await this.logRequestResponse(url, data, {
-                    error: error.response?.data || error.message
+                    error: errorData || error.message
                 });
                 throw error;
             }
@@ -252,6 +276,44 @@ export class TransferAgentClient {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
                 throw new Error(`Failed to get parties: ${errorData}`);
+            }
+            throw error;
+        }
+    }
+
+    async getEventsByContractId(contractId: string): Promise<any> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await this.makePostRequest(
+                `${this.config.ledgerUrl}/events/events-by-contract-id`,
+                {
+                    contractId,
+                    requestingParties: [this.config.fairmintPartyId]
+                },
+                headers
+            );
+            return response;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Failed to get events by contract ID: ${errorData}`);
+            }
+            throw error;
+        }
+    }
+
+    async getTransactionTreeByOffset(offset: string): Promise<any> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await this.axiosInstance.get(
+                `${this.config.ledgerUrl}/updates/transaction-tree-by-offset/${offset}?parties=${this.config.fairmintPartyId}`,
+                { headers }
+            );
+            return response;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Failed to get transaction tree by offset: ${errorData}`);
             }
             throw error;
         }
