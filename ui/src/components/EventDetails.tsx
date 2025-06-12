@@ -172,16 +172,15 @@ const EventDetails: React.FC<EventDetailsProps> = ({
         </div>
       )}
       {choice && (
-        <p className="text-sm text-gray-500">
-          <strong>Choice:</strong> {choice}
-        </p>
-      )}
-      {choiceArgument && (
-        <div className="mt-2">
-          <strong className="text-sm text-gray-500">Choice Argument:</strong>
-          <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
-            {JSON.stringify(choiceArgument, null, 2)}
-          </pre>
+        <div className="text-sm text-gray-500">
+          <strong>Choice:</strong>
+          {choiceArgument ? (
+            <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
+              {choice}({JSON.stringify(choiceArgument, null, 2)})
+            </pre>
+          ) : (
+            <span className="ml-1">{choice}</span>
+          )}
         </div>
       )}
       {offset && onOffsetClick && (
