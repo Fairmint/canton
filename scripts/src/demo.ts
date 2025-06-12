@@ -3,14 +3,14 @@ import { FairmintClient } from './helpers/fairmintClient';
 
 async function main() {
     try {
-        const config = new TransferAgentConfig();
+        const config = new TransferAgentConfig(true);
         const client = new FairmintClient(config);
 
         // Pre-req: Create FairmintAdminService [One time]
         const {contractId} = await client.createFairmintAdminService();
 
         // Pre-req: Create new party for issuer [Once per issuer]
-        const {partyId: issuerPartyId} = await client.createParty('Test001');
+        const {partyId: issuerPartyId} = await client.createParty('Test01121981823');
 
         // 1.1: Authorize issuer [Once per issuer]
         const authorizationContractId = await client.authorizeIssuer(contractId, issuerPartyId);

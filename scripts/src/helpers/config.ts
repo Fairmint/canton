@@ -15,13 +15,13 @@ export class TransferAgentConfig {
 
     constructor(isMainnet: boolean = false) {
         if (isMainnet) {
-            this.ledgerUrl = 'http://ledger-api.validator.transfer-agent.xyz/v2';
+            this.ledgerUrl = 'https://ledger-api.validator.transfer-agent.xyz/v2';
             this.clientId = this.audience = 'validator-mainnet-m2m';
             this.clientSecret = process.env.TRANSFER_AGENT_MAINNET_CLIENT_SECRET || '';
             this.fairmintPartyId = process.env.FAIRMINT_MAINNET_PARTY_ID || '';
             this.fairmintUserId = process.env.FAIRMINT_MAINNET_USER_ID || '';
         } else {
-            this.ledgerUrl = 'http://ledger-api.validator.devnet.transfer-agent.xyz/v2';
+            this.ledgerUrl = 'https://ledger-api.validator.devnet.transfer-agent.xyz/v2';
             this.clientId = this.audience = 'validator-devnet-m2m';
             this.clientSecret = process.env.TRANSFER_AGENT_DEVNET_CLIENT_SECRET || '';
             this.fairmintPartyId = process.env.FAIRMINT_DEVNET_PARTY_ID || '';
