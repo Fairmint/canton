@@ -136,7 +136,8 @@ const EventDetails: React.FC<EventDetailsProps> = ({
   const hasPartyDetails = (signatories?.length ?? 0) > 0 ||
                          (observers?.length ?? 0) > 0 ||
                          (witnessParties?.length ?? 0) > 0 ||
-                         (actingParties?.length ?? 0) > 0;
+                         (actingParties?.length ?? 0) > 0 ||
+                         !!createdAt;
 
   return (
     <div className="space-y-2">
@@ -160,11 +161,6 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             isClickable={!!onContractIdClick && contractId !== currentContractId}
             onClick={onContractIdClick ? () => onContractIdClick(contractId) : undefined}
           />
-        </p>
-      )}
-      {createdAt && (
-        <p className="text-sm text-gray-500">
-          <strong>Created At:</strong> {new Date(createdAt).toLocaleString()}
         </p>
       )}
       {createArgument && (
@@ -225,6 +221,11 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           </button>
           {showDetails && (
             <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
+              {createdAt && (
+                <p className="text-sm text-gray-500">
+                  <strong>Created At:</strong> {new Date(createdAt).toLocaleString()}
+                </p>
+              )}
               {actingParties && actingParties.length > 0 && (
                 <PartyList parties={actingParties} label="Acting Parties" />
               )}
