@@ -1,37 +1,13 @@
-import axios, { AxiosInstance } from 'axios';
-import { TransferAgentConfig } from './config';
-import { AuthResponse, CommandRequest, CommandResponse, CreateContractResponse } from './types';
+import axios from 'axios';
+import { TransferAgentConfig } from './config.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
-interface PartyCreationResult {
-    partyId: string;
-    isNewParty: boolean;
-}
-
-interface CreateCommandParams {
-    templateId: string;
-    createArguments: Record<string, any>;
-    actAs: string[];
-}
-
-interface ExerciseCommandParams {
-    templateId: string;
-    contractId: string;
-    choice: string;
-    choiceArgument: Record<string, any>;
-    actAs: string[];
-}
-
 export class TransferAgentClient {
-    private config: TransferAgentConfig;
-    private bearerToken: string | null = null;
-    private sequenceNumber: number = 1;
-    private axiosInstance: AxiosInstance;
-    private logDir: string;
-
-    constructor(config: TransferAgentConfig) {
+    constructor(config) {
         this.config = config;
+        this.bearerToken = null;
+        this.sequenceNumber = 1;
         this.axiosInstance = axios.create();
         this.logDir = path.join(__dirname, '../../logs');
         if (!fs.existsSync(this.logDir)) {
@@ -39,11 +15,11 @@ export class TransferAgentClient {
         }
     }
 
-    getFairmintPartyId(): string {
+    getFairmintPartyId() {
         return this.config.fairmintPartyId;
     }
 
-    private async logRequestResponse(url: string, request: any, response: any) {
+    async logRequestResponse(url, request, response) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const logFile = path.join(this.logDir, `request-${timestamp}.json`);
 
@@ -57,9 +33,9 @@ export class TransferAgentClient {
         fs.writeFileSync(logFile, JSON.stringify(logData, null, 2));
     }
 
-    private async makePostRequest<T>(url: string, data: any, headers?: Record<string, string>): Promise<T> {
+    async makePostRequest(url, data, headers) {
         try {
-            const response = await this.axiosInstance.post<T>(url, data, { headers });
+            const response = await this.axiosInstance.post(url, data, { headers });
             await this.logRequestResponse(url, data, response.data);
             return response.data;
         } catch (error) {
@@ -76,10 +52,10 @@ export class TransferAgentClient {
 
                     // Retry the request once with new authentication
                     try {
-                        const retryResponse = await this.axiosInstance.post<T>(url, data, { headers: newHeaders });
+                        const retryResponse = await this.axiosInstance.post(url, data, { headers: newHeaders });
                         await this.logRequestResponse(url, data, retryResponse.data);
                         return retryResponse.data;
-                    } catch (retryError: unknown) {
+                    } catch (retryError) {
                         // If retry fails, log and throw the original error
                         await this.logRequestResponse(url, data, {
                             error: axios.isAxiosError(retryError) ? retryError.response?.data || retryError.message : retryError
@@ -97,7 +73,7 @@ export class TransferAgentClient {
         }
     }
 
-    private async authenticate(): Promise<string> {
+    async authenticate() {
         const formData = new URLSearchParams();
         formData.append('grant_type', 'client_credentials');
         formData.append('client_id', this.config.clientId);
@@ -106,7 +82,7 @@ export class TransferAgentClient {
         formData.append('scope', this.config.scope);
 
         try {
-            const response = await this.makePostRequest<AuthResponse>(
+            const response = await this.makePostRequest(
                 this.config.authUrl,
                 formData.toString(),
                 {
@@ -124,7 +100,7 @@ export class TransferAgentClient {
         }
     }
 
-    private async getHeaders(): Promise<Record<string, string>> {
+    async getHeaders() {
         if (!this.bearerToken) {
             await this.authenticate();
         }
@@ -135,8 +111,8 @@ export class TransferAgentClient {
         };
     }
 
-    async createCommand(params: CreateCommandParams): Promise<CreateContractResponse> {
-        const command: CommandRequest = {
+    async createCommand(params) {
+        const command = {
             commands: [{
                 CreateCommand: {
                     templateId: params.templateId,
@@ -151,13 +127,16 @@ export class TransferAgentClient {
 
         try {
             const headers = await this.getHeaders();
-            const response = await this.makePostRequest<CommandResponse>(
+            const response = await this.makePostRequest(
                 `${this.config.ledgerUrl}/commands/submit-and-wait-for-transaction-tree`,
                 command,
                 headers
             );
 
-            return {contractId: response.transactionTree.eventsById['#' + response.transactionTree.updateId + ':0'].CreatedTreeEvent.value.contractId, updateId: response.transactionTree.updateId};
+            return {
+                contractId: response.transactionTree.eventsById['#' + response.transactionTree.updateId + ':0'].CreatedTreeEvent.value.contractId,
+                updateId: response.transactionTree.updateId
+            };
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
@@ -167,8 +146,8 @@ export class TransferAgentClient {
         }
     }
 
-    async exerciseCommand(params: ExerciseCommandParams): Promise<CommandResponse> {
-        const command: CommandRequest = {
+    async exerciseCommand(params) {
+        const command = {
             commands: [{
                 ExerciseCommand: {
                     templateId: params.templateId,
@@ -185,7 +164,7 @@ export class TransferAgentClient {
 
         try {
             const headers = await this.getHeaders();
-            const response = await this.makePostRequest<CommandResponse>(
+            const response = await this.makePostRequest(
                 `${this.config.ledgerUrl}/commands/submit-and-wait-for-transaction-tree`,
                 command,
                 headers
@@ -200,10 +179,10 @@ export class TransferAgentClient {
         }
     }
 
-    async createParty(partyIdHint: string): Promise<PartyCreationResult> {
+    async createParty(partyIdHint) {
         try {
             const headers = await this.getHeaders();
-            const response = await this.makePostRequest<{ partyDetails: {party: string }}>(
+            const response = await this.makePostRequest(
                 `${this.config.ledgerUrl}/parties`,
                 {
                     partyIdHint: `FM:${partyIdHint}`,
@@ -241,82 +220,51 @@ export class TransferAgentClient {
         }
     }
 
-    async setUserRights(partyId: string): Promise<void> {
+    async setUserRights(partyId) {
         const headers = await this.getHeaders();
         await this.makePostRequest(
-                `${this.config.ledgerUrl}/users/${this.config.fairmintUserId}/rights`,
-                {
-                    userId: this.config.fairmintUserId,
-                    rights: [
-                        {
-                            kind: {
-                                CanActAs: {
-                                    value: {
-                                        party: partyId
-                                    }
-                                }
-                            }
-                        }
-                    ],
-                    identityProviderId: ""
-                },
-                headers
-            );
-        }
-
-
-    private async getParties(): Promise<{ partyDetails: Array<{ party: string, isLocal: boolean, localMetadata: { resourceVersion: string, annotations: Record<string, any> }, identityProviderId: string }> }> {
-        try {
-            const headers = await this.getHeaders();
-            const response = await this.axiosInstance.get(
-                `${this.config.ledgerUrl}/parties`,
-                { headers }
-            );
-            return response.data;
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
-                throw new Error(`Failed to get parties: ${errorData}`);
-            }
-            throw error;
-        }
+            `${this.config.ledgerUrl}/users/${this.config.fairmintUserId}/rights`,
+            {
+                userId: this.config.fairmintUserId,
+                rights: [
+                    {
+                        type: "CanActAs",
+                        party: partyId
+                    },
+                    {
+                        type: "CanReadAs",
+                        party: partyId
+                    }
+                ]
+            },
+            headers
+        );
     }
 
-    async getEventsByContractId(contractId: string): Promise<any> {
-        try {
-            const headers = await this.getHeaders();
-            const response = await this.makePostRequest(
-                `${this.config.ledgerUrl}/events/events-by-contract-id`,
-                {
-                    contractId,
-                    requestingParties: [this.config.fairmintPartyId]
-                },
-                headers
-            );
-            return response;
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
-                throw new Error(`Failed to get events by contract ID: ${errorData}`);
-            }
-            throw error;
-        }
+    async getParties() {
+        const headers = await this.getHeaders();
+        return await this.makePostRequest(
+            `${this.config.ledgerUrl}/parties`,
+            {},
+            headers
+        );
     }
 
-    async getTransactionTreeByOffset(offset: string): Promise<any> {
-        try {
-            const headers = await this.getHeaders();
-            const response = await this.axiosInstance.get(
-                `${this.config.ledgerUrl}/updates/transaction-tree-by-offset/${offset}?parties=${this.config.fairmintPartyId}`,
-                { headers }
-            );
-            return response;
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
-                throw new Error(`Failed to get transaction tree by offset: ${errorData}`);
-            }
-            throw error;
-        }
+    async getEventsByContractId(contractId) {
+        const headers = await this.getHeaders();
+        return await this.makePostRequest(
+            `${this.config.ledgerUrl}/events/contract/${contractId}`,
+            {},
+            headers
+        );
     }
-}
+
+    async getTransactionTreeByOffset(offset) {
+        const headers = await this.getHeaders();
+        return await this.makePostRequest(
+            `${this.config.ledgerUrl}/transactions/tree/${offset}`,
+            {},
+            headers
+        );
+    }
+} 

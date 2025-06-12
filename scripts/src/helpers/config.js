@@ -4,16 +4,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export class TransferAgentConfig {
-    readonly authUrl: string = 'https://auth.transfer-agent.xyz/application/o/token/';
-    readonly ledgerUrl: string;
-    readonly clientId: string;
-    readonly clientSecret: string;
-    readonly fairmintPartyId: string;
-    readonly fairmintUserId: string;
-    readonly audience: string;
-    readonly scope: string = 'daml_ledger_apia';
+    constructor(isMainnet = false) {
+        this.authUrl = 'https://auth.transfer-agent.xyz/application/o/token/';
+        this.scope = 'daml_ledger_apia';
 
-    constructor(isMainnet: boolean = false) {
         if (isMainnet) {
             this.ledgerUrl = 'https://ledger-api.validator.transfer-agent.xyz/v2';
             this.clientId = this.audience = 'validator-mainnet-m2m';
@@ -38,4 +32,4 @@ export class TransferAgentConfig {
             throw new Error(`${isMainnet ? 'FAIRMINT_MAINNET_USER_ID' : 'FAIRMINT_DEVNET_USER_ID'} environment variable is not set`);
         }
     }
-}
+} 
