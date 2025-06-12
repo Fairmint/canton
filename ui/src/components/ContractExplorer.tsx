@@ -206,7 +206,7 @@ export default function ContractExplorer() {
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <div className="px-6 py-4">
             {events.created && (
-              <div className="mb-6">
+              <div className="mb-4 p-4 bg-gray-50 rounded">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Created Event</h3>
                 <EventDetails
                   data={events.created.createdEvent}
@@ -218,7 +218,7 @@ export default function ContractExplorer() {
             )}
 
             {events.archived && (
-              <div>
+              <div className="mb-4 p-4 bg-gray-50 rounded">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Archived Event</h3>
                 <EventDetails
                   data={events.archived.archivedEvent}
