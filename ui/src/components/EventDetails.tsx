@@ -255,10 +255,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             )}
             {exerciseResult && (
               <div className="mt-2">
-                <strong className="text-sm text-gray-500">Exercise Result:</strong>
-                <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
-                  {JSON.stringify(exerciseResult, null, 2)}
-                </pre>
+                <strong className="text-sm text-gray-500">Exercise Result:</strong> <span className="text-gray-500">{exerciseResult}</span>
               </div>
             )}
           </div>
