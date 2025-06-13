@@ -38,7 +38,7 @@ export class FairmintClient {
         }) as any;
 
         // Extract the IssuerAuthorization contract ID from the response
-        const authorizationContractId = response.transactionTree.eventsById['0'].ExercisedTreeEvent.exerciseResult;
+        const authorizationContractId = response.transactionTree.eventsById['0'].ExercisedTreeEvent.value.exerciseResult;
         console.debug(`Successfully authorized issuer with contract ID: ${authorizationContractId}`);
         return authorizationContractId;
     }
@@ -74,7 +74,7 @@ export class FairmintClient {
             choice: 'CreateStockClass',
             choiceArgument: {
                 stockClassType,
-                shares: shares
+                shares
             },
             actAs: [issuerPartyId]
         }) as any;
@@ -93,7 +93,7 @@ export class FairmintClient {
             choice: 'ProposeIssueStock',
             choiceArgument: {
                 recipient: recipientPartyId,
-                quantity: quantity
+                quantity
             },
             actAs: [issuerPartyId]
         }) as any;
