@@ -3,7 +3,7 @@ import { FairmintClient } from './helpers/fairmintClient';
 
 async function main() {
     try {
-        const config = new TransferAgentConfig(true);
+        const config = new TransferAgentConfig(false);
         const client = new FairmintClient(config);
 
         // Pre-req: Create FairmintAdminService [One time]

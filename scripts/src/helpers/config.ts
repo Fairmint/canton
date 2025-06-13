@@ -11,7 +11,7 @@ export class TransferAgentConfig {
     readonly fairmintPartyId: string;
     readonly fairmintUserId: string;
     readonly audience: string;
-    readonly scope: string = 'daml_ledger_apia';
+    readonly scope: string = 'daml_ledger_api';
 
     constructor(isMainnet: boolean = false) {
         if (isMainnet) {
