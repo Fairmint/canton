@@ -195,6 +195,16 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           <strong>Consuming:</strong> {consuming ? 'Yes' : 'No'}
         </p>
       )}
+      {exerciseResult && (
+        <p className="text-sm text-gray-500">
+          <strong>Exercise Result:</strong>{' '}
+          <ContractIdDisplay
+            contractId={String(exerciseResult)}
+            isClickable={!!onContractIdClick && String(exerciseResult) !== currentContractId}
+            onClick={onContractIdClick ? () => onContractIdClick(String(exerciseResult)) : undefined}
+          />
+        </p>
+      )}
       {offset && onOffsetClick && (
         <p className="text-sm text-gray-500">
           <strong>Offset:</strong>{' '}
@@ -252,11 +262,6 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             )}
             {witnessParties && witnessParties.length > 0 && (
               <PartyList parties={witnessParties} label="Witness Parties" />
-            )}
-            {exerciseResult && (
-              <div className="mt-2">
-                <strong className="text-sm text-gray-500">Exercise Result:</strong> <span className="text-gray-500">{exerciseResult}</span>
-              </div>
             )}
           </div>
         )}
