@@ -112,6 +112,7 @@ export default function ContractExplorer() {
 
     setLoading(true);
     setError(null);
+    setTransactionTree(null);
     try {
       const params = new URLSearchParams({
         contractId

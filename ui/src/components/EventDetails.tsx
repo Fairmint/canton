@@ -13,6 +13,8 @@ interface EventData {
   actingParties?: string[];
   offset?: string;
   contractId?: string;
+  consuming?: boolean;
+  exerciseResult?: any;
 }
 
 interface EventDetailsProps {
@@ -133,6 +135,8 @@ const EventDetails: React.FC<EventDetailsProps> = ({
     offset,
     contractId,
     witnessParties,
+    consuming,
+    exerciseResult,
   } = data;
 
   return (
@@ -185,6 +189,11 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             <span className="ml-1">{choice}</span>
           )}
         </div>
+      )}
+      {consuming !== undefined && (
+        <p className="text-sm text-gray-500">
+          <strong>Consuming:</strong> {consuming ? 'Yes' : 'No'}
+        </p>
       )}
       {offset && onOffsetClick && (
         <p className="text-sm text-gray-500">
@@ -243,6 +252,14 @@ const EventDetails: React.FC<EventDetailsProps> = ({
             )}
             {witnessParties && witnessParties.length > 0 && (
               <PartyList parties={witnessParties} label="Witness Parties" />
+            )}
+            {exerciseResult && (
+              <div className="mt-2">
+                <strong className="text-sm text-gray-500">Exercise Result:</strong>
+                <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
+                  {JSON.stringify(exerciseResult, null, 2)}
+                </pre>
+              </div>
             )}
           </div>
         )}
