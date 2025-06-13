@@ -157,7 +157,7 @@ export class TransferAgentClient {
                 headers
             );
 
-            return {contractId: response.transactionTree.eventsById['#' + response.transactionTree.updateId + ':0'].CreatedTreeEvent.value.contractId, updateId: response.transactionTree.updateId};
+            return {contractId: response.transactionTree.eventsById['0'].CreatedTreeEvent.value.contractId, updateId: response.transactionTree.updateId};
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
@@ -207,7 +207,6 @@ export class TransferAgentClient {
                 `${this.config.ledgerUrl}/parties`,
                 {
                     partyIdHint: `FM:${partyIdHint}`,
-                    displayName: partyIdHint,
                     identityProviderId: ""
                 },
                 headers
