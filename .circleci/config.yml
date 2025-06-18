@@ -37,6 +37,19 @@ jobs:
       - run:
           name: Build and Test
           command: npm run test
+      - run:
+          name: Install and Build Scripts
+          command: |
+            cd scripts
+            npm install
+            npm run build
+      - run:
+          name: Install and Build UI
+          command: |
+            cd ui
+            npm install
+            npm run build
+
 
 workflows:
   build-and-test-workflow:
