@@ -21,8 +21,8 @@ export class TransferAgentConfig {
             this.fairmintPartyId = process.env.FAIRMINT_MAINNET_PARTY_ID || '';
             this.fairmintUserId = process.env.FAIRMINT_MAINNET_USER_ID || '';
         } else {
-            this.ledgerUrl = 'https://ledger-api.validator.devnet.transfer-agent.xyz/v2';
-            this.clientId = this.audience = 'validator-devnet-m2m';
+            this.ledgerUrl = process.env.LEDGER_DEVNET_API || '';
+            this.clientId = this.audience = process.env.VALIDATOR_DEVNET_CLIENT_ID || '';
             this.clientSecret = process.env.TRANSFER_AGENT_DEVNET_CLIENT_SECRET || '';
             this.fairmintPartyId = process.env.FAIRMINT_DEVNET_PARTY_ID || '';
             this.fairmintUserId = process.env.FAIRMINT_DEVNET_USER_ID || '';
