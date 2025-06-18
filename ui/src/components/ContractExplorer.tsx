@@ -81,6 +81,7 @@ export default function ContractExplorer() {
     }
     return '';
   });
+  const [transactionInput, setTransactionInput] = useState('');
   const [transactionTree, setTransactionTree] = useState<TransactionTree | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(() => {
@@ -152,12 +153,51 @@ export default function ContractExplorer() {
     }
   };
 
+  const fetchTransactionTreeById = async (updateId: string) => {
+    setLoadingTree(true);
+    setError(null);
+    try {
+      const url = `/api/transaction-tree-by-id/${updateId}?eventFormat=verbose`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch transaction tree by ID');
+      }
+      const data = await response.json();
+      console.log('Received transaction tree by ID data:', data);
+      setTransactionTree(data);
+    } catch (err) {
+      console.error('Error in fetchTransactionTreeById:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoadingTree(false);
+    }
+  };
+
+  // Helper function to determine if input is an update ID or offset
+  const isUpdateId = (input: string): boolean => {
+    // Update IDs are long hex strings (typically 64+ characters)
+    // Offsets are short numbers
+    return input.length > 20 && /^[0-9a-f]+$/i.test(input);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShouldFetch(true);
   };
 
+  const handleTransactionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (transactionInput) {
+      if (isUpdateId(transactionInput)) {
+        fetchTransactionTreeById(transactionInput);
+      } else {
+        fetchTransactionTree(transactionInput);
+      }
+    }
+  };
+
   const handleOffsetClick = (offset: string) => {
+    setTransactionInput(offset);
     fetchTransactionTree(offset);
   };
 
@@ -168,32 +208,63 @@ export default function ContractExplorer() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="contractId" className="block text-sm font-medium text-gray-700">
-            Contract ID
-          </label>
-          <div className="mt-1">
-            <input
-              type="text"
-              id="contractId"
-              value={contractId}
-              onChange={(e) => handleContractIdChange(e.target.value)}
-              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
-              placeholder="Enter contract ID"
-              required
-            />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Contract ID Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="contractId" className="block text-sm font-medium text-gray-700">
+              Contract ID
+            </label>
+            <div className="mt-1">
+              <input
+                type="text"
+                id="contractId"
+                value={contractId}
+                onChange={(e) => handleContractIdChange(e.target.value)}
+                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
+                placeholder="Enter contract ID"
+                required
+              />
+            </div>
           </div>
-        </div>
-        <div>
-          <button
-            type="submit"
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Search
-          </button>
-        </div>
-      </form>
+          <div>
+            <button
+              type="submit"
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Search Events
+            </button>
+          </div>
+        </form>
+
+        {/* Transaction Input Form */}
+        <form onSubmit={handleTransactionSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="transactionInput" className="block text-sm font-medium text-gray-700">
+              Transaction Input
+            </label>
+            <div className="mt-1">
+              <input
+                type="text"
+                id="transactionInput"
+                value={transactionInput}
+                onChange={(e) => setTransactionInput(e.target.value)}
+                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
+                placeholder="Enter update ID or offset"
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <button
+              type="submit"
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Search Transaction Tree
+            </button>
+          </div>
+        </form>
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -263,7 +334,7 @@ export default function ContractExplorer() {
                     <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
                       {event.ExercisedTreeEvent && (
                         <div>
-                          <h5 className="font-medium text-gray-900 mb-2">Exercise Event</h5>
+                          <h5 className="font-medium text-gray-900 mb-2">Exercise Event (ID: {nodeId})</h5>
                           <EventDetails
                             data={event.ExercisedTreeEvent.value}
                             onOffsetClick={handleOffsetClick}
@@ -275,7 +346,7 @@ export default function ContractExplorer() {
 
                       {event.CreatedTreeEvent && (
                         <div>
-                          <h5 className="font-medium text-gray-900 mb-2">Create Event</h5>
+                          <h5 className="font-medium text-gray-900 mb-2">Create Event (ID: {nodeId})</h5>
                           <EventDetails
                             data={event.CreatedTreeEvent.value}
                             onOffsetClick={handleOffsetClick}

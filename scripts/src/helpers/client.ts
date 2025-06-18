@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { TransferAgentConfig } from './config';
-import { AuthResponse, CommandRequest, CommandResponse, CreateContractResponse } from './types';
+import { AuthResponse, CommandRequest, CommandResponse, CreateContractResponse, UpdateByIdRequest, UpdateByIdResponse, TransactionTree } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -118,7 +118,8 @@ export class TransferAgentClient {
             return this.bearerToken;
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                throw new Error(`Authentication failed: ${error.response?.data || error.message}`);
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Authentication failed: ${errorData}`);
             }
             throw error;
         }
@@ -157,7 +158,12 @@ export class TransferAgentClient {
                 headers
             );
 
-            return {contractId: response.transactionTree.eventsById['0'].CreatedTreeEvent.value.contractId, updateId: response.transactionTree.updateId};
+            const event = response.transactionTree.eventsById['0'];
+            if (!('CreatedTreeEvent' in event)) {
+                throw new Error(`Expected CreatedTreeEvent but got ${Object.keys(event)[0]}`);
+            }
+
+            return {contractId: event.CreatedTreeEvent.value.contractId, updateId: response.transactionTree.updateId};
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
@@ -314,6 +320,76 @@ export class TransferAgentClient {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
                 throw new Error(`Failed to get transaction tree by offset: ${errorData}`);
+            }
+            throw error;
+        }
+    }
+
+    async getUpdateById(updateId: string): Promise<UpdateByIdResponse> {
+        try {
+            const headers = await this.getHeaders();
+            const response = await this.makePostRequest<UpdateByIdResponse>(
+                `${this.config.ledgerUrl}/updates/update-by-id`,
+                {
+                    updateId,
+                    requestingParties: [this.config.fairmintPartyId],
+                    updateFormat: {
+                        includeTransactions: {
+                            eventFormat: {
+                                verbose: true
+                            },
+                            transactionShape: "TRANSACTION_SHAPE_UNSPECIFIED"
+                        },
+                    }
+                },
+                headers
+            );
+            return response;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Failed to get update by ID: ${errorData}`);
+            }
+            throw error;
+        }
+    }
+
+    async getTransactionTreeById(updateId: string, options?: {
+        eventFormat?: 'verbose' | 'minimal';
+        includeCreatedEventBlob?: boolean;
+    }): Promise<TransactionTree> {
+        try {
+            const headers = await this.getHeaders();
+            
+            // Build query parameters
+            const queryParams = new URLSearchParams({
+                parties: this.config.fairmintPartyId
+            });
+
+            // Add optional formatting parameters if provided
+            if (options?.eventFormat) {
+                queryParams.append('eventFormat', options.eventFormat);
+            }
+            if (options?.includeCreatedEventBlob !== undefined) {
+                queryParams.append('includeCreatedEventBlob', options.includeCreatedEventBlob.toString());
+            }
+
+            const response = await this.axiosInstance.get(
+                `${this.config.ledgerUrl}/updates/transaction-tree-by-id/${updateId}?${queryParams.toString()}`,
+                { headers }
+            );
+            
+            await this.logRequestResponse(
+                `${this.config.ledgerUrl}/updates/transaction-tree-by-id/${updateId}`,
+                { updateId, options },
+                response.data
+            );
+            
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Failed to get transaction tree by ID: ${errorData}`);
             }
             throw error;
         }
