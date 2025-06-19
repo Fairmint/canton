@@ -2,6 +2,7 @@
   "scripts": {
     "build": "cd src && daml build --all",
     "clean": "find . -type d \\( -name '.daml' -o -name 'logs' \\) -exec rm -rf {} +",
+    "codegen": "cd src/OpenCapTable-v01 && daml codegen js .daml/dist/OpenCapTable-v01-0.0.1.dar -o ../../libs/daml.js",
     "docker": "docker pull digitalasset/canton-open-source && docker run --rm -it digitalasset/canton-open-source --no-tty -C canton.participants.p.ledger-api.port=1234",
     "sandbox": "npm run build && cd src/Sandbox && daml start",
     "test": "npm run build && cd src/Test && daml test"

@@ -26,7 +26,7 @@ interface ExerciseCommandParams {
 export class TransferAgentClient {
     private config: TransferAgentConfig;
     public provider: ProviderConfig; // The selected provider configuration
-    private bearerToken: string | null = null;
+    public bearerToken: string | null = null;
     private sequenceNumber: number = 1;
     private axiosInstance: AxiosInstance;
     private logDir: string;

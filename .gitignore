@@ -1,6 +1,7 @@
 # DAML artifacts
 .daml/
 daml.js/
+daml-js/
 build/
 *.log
 log/
