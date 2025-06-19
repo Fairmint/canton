@@ -54,7 +54,49 @@ export class TransferAgentClient {
             response
         };
 
-        fs.writeFileSync(logFile, JSON.stringify(logData, null, 2));
+        try {
+            // Use a replacer function to handle non-serializable values
+            const safeStringify = (obj: any) => {
+                return JSON.stringify(obj, (key, value) => {
+                    if (value === undefined) {
+                        return '[undefined]';
+                    }
+                    if (typeof value === 'function') {
+                        return '[function]';
+                    }
+                    if (value instanceof Error) {
+                        return {
+                            name: value.name,
+                            message: value.message,
+                            stack: value.stack
+                        };
+                    }
+                    return value;
+                }, 2);
+            };
+
+            fs.writeFileSync(logFile, safeStringify(logData));
+        } catch (error) {
+            // If serialization fails, log a simplified version
+            const fallbackLogData = {
+                timestamp,
+                url,
+                request: request ? '[request data]' : null,
+                response: response ? '[response data]' : null,
+                serializationError: error instanceof Error ? error.message : String(error)
+            };
+            
+            try {
+                fs.writeFileSync(logFile, JSON.stringify(fallbackLogData, null, 2));
+            } catch (fallbackError) {
+                // If even the fallback fails, write a minimal log
+                fs.writeFileSync(logFile, JSON.stringify({
+                    timestamp,
+                    url,
+                    error: 'Failed to serialize log data'
+                }, null, 2));
+            }
+        }
     }
 
     private async makePostRequest<T>(url: string, data: any, headers?: Record<string, string>): Promise<T> {
@@ -89,6 +131,46 @@ export class TransferAgentClient {
                 }
 
                 await this.logRequestResponse(url, data, {
+                    error: errorData || error.message
+                });
+                throw error;
+            }
+            throw error;
+        }
+    }
+
+    private async makeGetRequest<T>(url: string, headers?: Record<string, string>): Promise<T> {
+        try {
+            const response = await this.axiosInstance.get<T>(url, { headers });
+            await this.logRequestResponse(url, null, response.data);
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data;
+
+                // Check for security-sensitive error
+                if (errorData?.cause === "A security-sensitive error has been received") {
+                    // Clear the bearer token to force re-authentication
+                    this.bearerToken = null;
+
+                    // Get new headers with fresh authentication
+                    const newHeaders = await this.getHeaders();
+
+                    // Retry the request once with new authentication
+                    try {
+                        const retryResponse = await this.axiosInstance.get<T>(url, { headers: newHeaders });
+                        await this.logRequestResponse(url, null, retryResponse.data);
+                        return retryResponse.data;
+                    } catch (retryError: unknown) {
+                        // If retry fails, log and throw the original error
+                        await this.logRequestResponse(url, null, {
+                            error: axios.isAxiosError(retryError) ? retryError.response?.data || retryError.message : retryError
+                        });
+                        throw error;
+                    }
+                }
+
+                await this.logRequestResponse(url, null, {
                     error: errorData || error.message
                 });
                 throw error;
@@ -273,11 +355,10 @@ export class TransferAgentClient {
     private async getParties(): Promise<{ partyDetails: Array<{ party: string, isLocal: boolean, localMetadata: { resourceVersion: string, annotations: Record<string, any> }, identityProviderId: string }> }> {
         try {
             const headers = await this.getHeaders();
-            const response = await this.axiosInstance.get(
+            return await this.makeGetRequest(
                 `${this.config.ledgerUrl}/parties`,
-                { headers }
+                headers
             );
-            return response.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
@@ -311,11 +392,10 @@ export class TransferAgentClient {
     async getTransactionTreeByOffset(offset: string): Promise<any> {
         try {
             const headers = await this.getHeaders();
-            const response = await this.axiosInstance.get(
+            return await this.makeGetRequest(
                 `${this.config.ledgerUrl}/updates/transaction-tree-by-offset/${offset}?parties=${this.config.fairmintPartyId}`,
-                { headers }
+                headers
             );
-            return response;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
@@ -374,18 +454,18 @@ export class TransferAgentClient {
                 queryParams.append('includeCreatedEventBlob', options.includeCreatedEventBlob.toString());
             }
 
-            const response = await this.axiosInstance.get(
+            const response = await this.makeGetRequest<TransactionTree>(
                 `${this.config.ledgerUrl}/updates/transaction-tree-by-id/${updateId}?${queryParams.toString()}`,
-                { headers }
+                headers
             );
             
             await this.logRequestResponse(
                 `${this.config.ledgerUrl}/updates/transaction-tree-by-id/${updateId}`,
                 { updateId, options },
-                response.data
+                response
             );
             
-            return response.data;
+            return response;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;

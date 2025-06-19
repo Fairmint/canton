@@ -6,4 +6,12 @@ dependencies:
   - daml-prim
   - daml-stdlib
   - daml-script
+data-dependencies:
   - ../OpenCapTable-v00/.daml/dist/OpenCapTable-v00-0.0.1.dar
+  - ../../libs/splice/daml/dars/splice-amulet-0.1.9.dar
+  # - ../../libs/splice/daml/dars/splice-wallet-payments-0.1.9.dar
+  - ../../libs/splice/daml/dars/splice-util-0.1.3.dar
+  - ../../libs/splice/daml/dars/splice-api-featured-app-v1-1.0.0.dar
+  - ../../libs/splice/daml/dars/splice-api-token-metadata-v1-1.0.0.dar
+  # - ../../libs/splice/daml/dars/splice-token-test-dummy-holding-0.0.1.dar
+  
