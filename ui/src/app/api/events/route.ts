@@ -2,13 +2,27 @@ import { NextResponse } from 'next/server';
 import { TransferAgentClient } from '@/../../scripts/src/helpers/client';
 import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 const config = new TransferAgentConfig(false);
 const client = new TransferAgentClient(config);
 
-export async function GET(request: Request) {
+export async function GET(
+    request: Request
+) {
     try {
-        // Get contractId and requestingParties from query parameters
         const { searchParams } = new URL(request.url);
+
+        // Handle case where searchParams might be undefined during static generation
+        if (!searchParams) {
+            return NextResponse.json(
+                { error: 'Invalid request parameters' },
+                { status: 400 }
+            );
+        }
+
+        // Get contractId from searchParams parameter
         const contractId = searchParams.get('contractId');
 
         if (!contractId) {

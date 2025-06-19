@@ -196,14 +196,30 @@ export default function ContractExplorer() {
         contractId: searchInput
       });
 
+      console.log('Fetching events for contract ID:', searchInput);
       const response = await fetch(`/api/events?${params}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch events');
+        const errorText = await response.text();
+        console.error('Failed to fetch events:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          responseText: errorText
+        });
+        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
       console.log('Received events data:', data);
       setEvents(data);
     } catch (err) {
+      console.error('Error in fetchEvents:', {
+        error: err,
+        contractId: searchInput,
+        errorMessage: err instanceof Error ? err.message : 'Unknown error',
+        errorStack: err instanceof Error ? err.stack : undefined
+      });
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -220,15 +236,33 @@ export default function ContractExplorer() {
         url = `/api/transaction-tree/${searchInput}`;
       }
       
+      console.log('Fetching transaction tree:', { type, searchInput, url });
       const response = await fetch(url);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch transaction tree');
+        const errorText = await response.text();
+        console.error('Failed to fetch transaction tree:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          responseText: errorText,
+          type,
+          searchInput
+        });
+        throw new Error(`Failed to fetch transaction tree: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
       console.log('Received transaction tree data:', data);
       setTransactionTree(data);
     } catch (err) {
-      console.error('Error in fetchTransactionTree:', err);
+      console.error('Error in fetchTransactionTree:', {
+        error: err,
+        type,
+        searchInput,
+        errorMessage: err instanceof Error ? err.message : 'Unknown error',
+        errorStack: err instanceof Error ? err.stack : undefined
+      });
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoadingTree(false);
