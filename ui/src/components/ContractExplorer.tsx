@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EventDetails from './EventDetails';
 
+interface Provider {
+  name: string;
+  displayName: string;
+}
+
 interface CreatedEvent {
   createdEvent: {
     contractId: string;
@@ -88,13 +93,18 @@ export default function ContractExplorer() {
   const [showDetails, setShowDetails] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<string>('');
+  const [loadingProviders, setLoadingProviders] = useState(false);
 
   // Handle client-side initialization and URL params
   useEffect(() => {
     setIsClient(true);
     
-    // Get search term from URL params
+    // Get search term and provider from URL params
     const urlSearchTerm = searchParams.get('q');
+    const urlProvider = searchParams.get('p');
+    
     if (urlSearchTerm) {
       setSearchInput(urlSearchTerm);
       setShouldFetch(true);
@@ -107,9 +117,15 @@ export default function ContractExplorer() {
       }
     }
 
+    if (urlProvider) {
+      setSelectedProvider(urlProvider);
+    }
+
     // Handle browser back/forward navigation
     const handlePopState = () => {
       const currentSearchTerm = new URLSearchParams(window.location.search).get('q');
+      const currentProvider = new URLSearchParams(window.location.search).get('p');
+      
       if (currentSearchTerm !== searchInput) {
         setSearchInput(currentSearchTerm || '');
         setShouldFetch(true);
@@ -117,6 +133,10 @@ export default function ContractExplorer() {
         setEvents(null);
         setTransactionTree(null);
         setError(null);
+      }
+      
+      if (currentProvider !== selectedProvider) {
+        setSelectedProvider(currentProvider || '');
       }
     };
 
@@ -127,12 +147,40 @@ export default function ContractExplorer() {
     };
   }, [searchParams]);
 
+  // Load available providers
+  useEffect(() => {
+    const loadProviders = async () => {
+      setLoadingProviders(true);
+      try {
+        const response = await fetch('/api/providers');
+        if (response.ok) {
+          const data = await response.json();
+          setProviders(data);
+          // Set default provider if none selected
+          if (!selectedProvider && data.length > 0) {
+            setSelectedProvider(data[0].name);
+          }
+        } else {
+          console.error('Failed to load providers');
+        }
+      } catch (error) {
+        console.error('Error loading providers:', error);
+      } finally {
+        setLoadingProviders(false);
+      }
+    };
+
+    if (isClient) {
+      loadProviders();
+    }
+  }, [isClient, selectedProvider]);
+
   useEffect(() => {
     if (shouldFetch && searchInput && isClient) {
       performSearch();
       setShouldFetch(false);
     }
-  }, [searchInput, shouldFetch, isClient]);
+  }, [searchInput, shouldFetch, isClient, selectedProvider]);
 
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
@@ -140,6 +188,33 @@ export default function ContractExplorer() {
       localStorage.setItem('lastSearchInput', value);
     }
     // Don't update URL here - only update when actually searching
+  };
+
+  const handleProviderChange = (provider: string) => {
+    setSelectedProvider(provider);
+    
+    // Update URL with new provider
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (provider) {
+        url.searchParams.set('p', provider);
+      } else {
+        url.searchParams.delete('p');
+      }
+      
+      // Use pushState to create a new history entry
+      window.history.pushState({}, '', url.toString());
+    }
+    
+    // Clear previous results when changing provider
+    setEvents(null);
+    setTransactionTree(null);
+    setError(null);
+    
+    // Re-fetch if there's a search term
+    if (searchInput) {
+      setShouldFetch(true);
+    }
   };
 
   // Helper function to determine search type based on input length and format
@@ -196,7 +271,11 @@ export default function ContractExplorer() {
         contractId: searchInput
       });
 
-      console.log('Fetching events for contract ID:', searchInput);
+      if (selectedProvider) {
+        params.append('provider', selectedProvider);
+      }
+
+      console.log('Fetching events for contract ID:', searchInput, 'with provider:', selectedProvider);
       const response = await fetch(`/api/events?${params}`);
       
       if (!response.ok) {
@@ -217,6 +296,7 @@ export default function ContractExplorer() {
       console.error('Error in fetchEvents:', {
         error: err,
         contractId: searchInput,
+        provider: selectedProvider,
         errorMessage: err instanceof Error ? err.message : 'Unknown error',
         errorStack: err instanceof Error ? err.stack : undefined
       });
@@ -236,7 +316,11 @@ export default function ContractExplorer() {
         url = `/api/transaction-tree/${searchInput}`;
       }
       
-      console.log('Fetching transaction tree:', { type, searchInput, url });
+      if (selectedProvider) {
+        url += `${type === 'byId' ? '&' : '?'}provider=${encodeURIComponent(selectedProvider)}`;
+      }
+      
+      console.log('Fetching transaction tree:', { type, searchInput, url, provider: selectedProvider });
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -247,7 +331,8 @@ export default function ContractExplorer() {
           url: response.url,
           responseText: errorText,
           type,
-          searchInput
+          searchInput,
+          provider: selectedProvider
         });
         throw new Error(`Failed to fetch transaction tree: ${response.status} ${response.statusText}`);
       }
@@ -260,6 +345,7 @@ export default function ContractExplorer() {
         error: err,
         type,
         searchInput,
+        provider: selectedProvider,
         errorMessage: err instanceof Error ? err.message : 'Unknown error',
         errorStack: err instanceof Error ? err.stack : undefined
       });
@@ -281,6 +367,12 @@ export default function ContractExplorer() {
         url.searchParams.delete('q');
       }
       
+      if (selectedProvider) {
+        url.searchParams.set('p', selectedProvider);
+      } else {
+        url.searchParams.delete('p');
+      }
+      
       // Use pushState to create a new history entry for the search
       window.history.pushState({}, '', url.toString());
     }
@@ -295,6 +387,9 @@ export default function ContractExplorer() {
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('q', offset);
+      if (selectedProvider) {
+        url.searchParams.set('p', selectedProvider);
+      }
       window.history.pushState({}, '', url.toString());
     }
     
@@ -308,6 +403,9 @@ export default function ContractExplorer() {
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('q', contractId);
+      if (selectedProvider) {
+        url.searchParams.set('p', selectedProvider);
+      }
       window.history.pushState({}, '', url.toString());
     }
     
@@ -330,16 +428,39 @@ export default function ContractExplorer() {
           <label htmlFor="searchInput" className="block text-sm font-medium text-gray-700">
             Search
           </label>
-          <div className="mt-1">
-            <input
-              type="text"
-              id="searchInput"
-              value={searchInput}
-              onChange={(e) => handleSearchInputChange(e.target.value)}
-              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
-              placeholder={getPlaceholderText()}
-              required
-            />
+          <div className="mt-1 flex gap-2">
+            <div className="flex-1">
+              <input
+                type="text"
+                id="searchInput"
+                value={searchInput}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
+                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
+                placeholder={getPlaceholderText()}
+                required
+              />
+            </div>
+            <div className="w-48">
+              <select
+                id="providerSelect"
+                value={selectedProvider}
+                onChange={(e) => handleProviderChange(e.target.value)}
+                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
+                disabled={loadingProviders}
+              >
+                {loadingProviders ? (
+                  <option>Loading...</option>
+                ) : providers.length === 0 ? (
+                  <option>No providers</option>
+                ) : (
+                  providers.map((provider) => (
+                    <option key={provider.name} value={provider.name}>
+                      {provider.displayName}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </div>
           {searchType && (
             <p className="mt-1 text-sm text-gray-500">
