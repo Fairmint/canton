@@ -50,7 +50,7 @@ jobs:
             git config --global --list | grep credential
             
             # Initialize and update submodules with LFS support
-            git submodule update --init --recursive
+            git submodule update --init
             
             # Debug: Check if LFS files were downloaded
             echo "Checking for LFS files in submodules:"
