@@ -7,6 +7,26 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Setup Git LFS authentication
+          command: |
+            # Install Git LFS if not already available
+            curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+            sudo apt-get install git-lfs
+            
+            # Configure Git LFS authentication using GitHub token
+            git config --global credential.helper store
+            echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > ~/.git-credentials
+            
+            # Alternative SSH-based authentication (uncomment if using SSH keys):
+            # mkdir -p ~/.ssh
+            # echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+            # chmod 600 ~/.ssh/id_rsa
+            # ssh-keyscan github.com >> ~/.ssh/known_hosts
+            # git config --global url."git@github.com:".insteadOf "https://github.com/"
+            
+            # Initialize Git LFS
+            git lfs install
+      - run:
           name: Initialize submodules
           command: git submodule update --init --recursive
       - run:
