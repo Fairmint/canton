@@ -10,7 +10,7 @@ async function main() {
         const {contractId} = await client.createFairmintAdminService();
 
         // Pre-req: Create new party for issuer [Once per issuer]
-        const {partyId: issuerPartyId} = await client.createParty('Test01121981823');
+        const {partyId: issuerPartyId} = await client.createParty('Test0001003');
 
         // 1.1: Authorize issuer [Once per issuer]
         const authorizationContractId = await client.authorizeIssuer(contractId, issuerPartyId);
@@ -24,8 +24,8 @@ async function main() {
         );
 
         // Pre-req: Create parties for Bob and Alice
-        const {partyId: alicePartyId} = await client.createParty('Alice');
-        const {partyId: bobPartyId} = await client.createParty('Bob');
+        const {partyId: alicePartyId} = await client.createParty('Alice0001003');
+        const {partyId: bobPartyId} = await client.createParty('Bob0001003');
 
         // 2.1: Issuer creates stockclass "Common" with 10M authorized shares
         const {stockClassContractId} = await client.createStockClass(
