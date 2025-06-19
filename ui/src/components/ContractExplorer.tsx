@@ -79,49 +79,89 @@ export default function ContractExplorer() {
   const [events, setEvents] = useState<ContractEvents | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [contractId, setContractId] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('lastContractId') || '';
-    }
-    return '';
-  });
-  const [transactionInput, setTransactionInput] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [transactionTree, setTransactionTree] = useState<TransactionTree | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [shouldFetch, setShouldFetch] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return !!localStorage.getItem('lastContractId');
+  const [shouldFetch, setShouldFetch] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Handle client-side initialization
+  useEffect(() => {
+    setIsClient(true);
+    const savedInput = localStorage.getItem('lastSearchInput');
+    if (savedInput) {
+      setSearchInput(savedInput);
+      setShouldFetch(true);
     }
-    return false;
-  });
+  }, []);
 
   useEffect(() => {
-    if (shouldFetch && contractId) {
-      fetchEvents();
+    if (shouldFetch && searchInput && isClient) {
+      performSearch();
       setShouldFetch(false);
     }
-  }, [contractId, shouldFetch]);
+  }, [searchInput, shouldFetch, isClient]);
 
-  const handleContractIdChange = (value: string) => {
-    setContractId(value);
+  const handleSearchInputChange = (value: string) => {
+    setSearchInput(value);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lastContractId', value);
+      localStorage.setItem('lastSearchInput', value);
+    }
+  };
+
+  // Helper function to determine search type based on input length and format
+  const getSearchType = (input: string): 'contract' | 'updateId' | 'offset' | null => {
+    const inputStr = String(input).trim();
+    if (!inputStr) return null;
+    
+    // Contract IDs are very long hex strings (typically 130+ characters)
+    if (inputStr.length > 100 && /^[0-9a-f]+$/i.test(inputStr)) {
+      return 'contract';
+    }
+    
+    // Update IDs are long hex strings (typically 60+ characters)
+    if (inputStr.length > 50 && /^[0-9a-f]+$/i.test(inputStr)) {
+      return 'updateId';
+    }
+    
+    // Offsets are short numbers
+    if (inputStr.length < 20 && /^\d+$/.test(inputStr)) {
+      return 'offset';
+    }
+    
+    return null;
+  };
+
+  const performSearch = async () => {
+    if (!searchInput) {
+      setError('Search input is required');
+      return;
+    }
+
+    const searchType = getSearchType(searchInput);
+    if (!searchType) {
+      setError('Invalid input format. Please enter a valid contract ID, update ID, or offset.');
+      return;
+    }
+
+    // Clear previous results
+    setEvents(null);
+    setTransactionTree(null);
+    setError(null);
+
+    if (searchType === 'contract') {
+      await fetchEvents();
+    } else {
+      await fetchTransactionTree(searchType === 'updateId' ? 'byId' : 'byOffset');
     }
   };
 
   const fetchEvents = async () => {
-    if (!contractId) {
-      setError('Contract ID is required');
-      return;
-    }
-
     setLoading(true);
-    setError(null);
-    setTransactionTree(null);
     try {
       const params = new URLSearchParams({
-        contractId
+        contractId: searchInput
       });
 
       const response = await fetch(`/api/events?${params}`);
@@ -138,17 +178,22 @@ export default function ContractExplorer() {
     }
   };
 
-  const fetchTransactionTree = async (offset: string) => {
+  const fetchTransactionTree = async (type: 'byId' | 'byOffset') => {
     setLoadingTree(true);
-    setError(null);
     try {
-      const url = `/api/transaction-tree/${offset}`;
+      let url: string;
+      if (type === 'byId') {
+        url = `/api/transaction-tree-by-id/${searchInput}?eventFormat=verbose`;
+      } else {
+        url = `/api/transaction-tree/${searchInput}`;
+      }
+      
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch transaction tree');
       }
       const data = await response.json();
-      console.log('Received data:', data);
+      console.log('Received transaction tree data:', data);
       setTransactionTree(data);
     } catch (err) {
       console.error('Error in fetchTransactionTree:', err);
@@ -158,118 +203,63 @@ export default function ContractExplorer() {
     }
   };
 
-  const fetchTransactionTreeById = async (updateId: string) => {
-    setLoadingTree(true);
-    setError(null);
-    try {
-      const url = `/api/transaction-tree-by-id/${updateId}?eventFormat=verbose`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch transaction tree by ID');
-      }
-      const data = await response.json();
-      console.log('Received transaction tree by ID data:', data);
-      setTransactionTree(data);
-    } catch (err) {
-      console.error('Error in fetchTransactionTreeById:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoadingTree(false);
-    }
-  };
-
-  // Helper function to determine if input is an update ID or offset
-  const isUpdateId = (input: string): boolean => {
-    // Update IDs are long hex strings (typically 64+ characters)
-    // Offsets are short numbers
-    return input.length > 20 && /^[0-9a-f]+$/i.test(input);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShouldFetch(true);
   };
 
-  const handleTransactionSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (transactionInput) {
-      if (isUpdateId(transactionInput)) {
-        fetchTransactionTreeById(transactionInput);
-      } else {
-        fetchTransactionTree(transactionInput);
-      }
-    }
-  };
-
   const handleOffsetClick = (offset: string) => {
-    setTransactionInput(offset);
-    fetchTransactionTree(offset);
+    setSearchInput(offset);
+    setShouldFetch(true);
   };
 
   const handleContractIdClick = (contractId: string) => {
-    handleContractIdChange(contractId);
+    handleSearchInputChange(contractId);
     setShouldFetch(true);
+  };
+
+  const searchType = getSearchType(searchInput);
+  const getPlaceholderText = () => {
+    if (searchType === 'contract') return 'Contract ID detected';
+    if (searchType === 'updateId') return 'Update ID detected';
+    if (searchType === 'offset') return 'Offset detected';
+    return 'Enter contract ID, update ID, or offset';
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Contract ID Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="contractId" className="block text-sm font-medium text-gray-700">
-              Contract ID
-            </label>
-            <div className="mt-1">
-              <input
-                type="text"
-                id="contractId"
-                value={contractId}
-                onChange={(e) => handleContractIdChange(e.target.value)}
-                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
-                placeholder="Enter contract ID"
-                required
-              />
-            </div>
+      {/* Unified Search Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="searchInput" className="block text-sm font-medium text-gray-700">
+            Search
+          </label>
+          <div className="mt-1">
+            <input
+              type="text"
+              id="searchInput"
+              value={searchInput}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
+              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
+              placeholder={getPlaceholderText()}
+              required
+            />
           </div>
-          <div>
-            <button
-              type="submit"
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Search Events
-            </button>
-          </div>
-        </form>
-
-        {/* Transaction Input Form */}
-        <form onSubmit={handleTransactionSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="transactionInput" className="block text-sm font-medium text-gray-700">
-              Transaction Input
-            </label>
-            <div className="mt-1">
-              <input
-                type="text"
-                id="transactionInput"
-                value={transactionInput}
-                onChange={(e) => setTransactionInput(e.target.value)}
-                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
-                placeholder="Enter update ID or offset"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
-              Search Transaction Tree
-            </button>
-          </div>
-        </form>
-      </div>
+          {searchType && (
+            <p className="mt-1 text-sm text-gray-500">
+              Detected: {searchType === 'contract' ? 'Contract ID' : searchType === 'updateId' ? 'Update ID' : 'Offset'}
+            </p>
+          )}
+        </div>
+        <div>
+          <button
+            type="submit"
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Search
+          </button>
+        </div>
+      </form>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -277,6 +267,7 @@ export default function ContractExplorer() {
         </div>
       )}
 
+      {/* Contract Events Results */}
       {loading ? (
         <div className="text-center py-4">Loading events...</div>
       ) : events ? (
@@ -289,7 +280,7 @@ export default function ContractExplorer() {
                   data={events.created.createdEvent}
                   onOffsetClick={handleOffsetClick}
                   onContractIdClick={handleContractIdClick}
-                  currentContractId={contractId}
+                  currentContractId={searchInput}
                 />
               </div>
             )}
@@ -301,22 +292,19 @@ export default function ContractExplorer() {
                   data={events.archived.archivedEvent}
                   onOffsetClick={handleOffsetClick}
                   onContractIdClick={handleContractIdClick}
-                  currentContractId={contractId}
+                  currentContractId={searchInput}
                 />
               </div>
             )}
           </div>
         </div>
-      ) : (
-        <div className="text-center py-4 text-gray-500">
-          No events found. Enter a contract ID to search.
-        </div>
-      )}
+      ) : null}
 
+      {/* Transaction Tree Results */}
       {loadingTree ? (
         <div className="text-center py-4">Loading transaction tree...</div>
       ) : transactionTree && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md mt-6">
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <div className="px-6 py-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Transaction Tree</h3>
             <div className="space-y-4">
@@ -388,7 +376,7 @@ export default function ContractExplorer() {
                             data={event.ExercisedTreeEvent.value}
                             onOffsetClick={handleOffsetClick}
                             onContractIdClick={handleContractIdClick}
-                            currentContractId={contractId}
+                            currentContractId={searchInput}
                           />
                         </div>
                       )}
@@ -400,7 +388,7 @@ export default function ContractExplorer() {
                             data={event.CreatedTreeEvent.value}
                             onOffsetClick={handleOffsetClick}
                             onContractIdClick={handleContractIdClick}
-                            currentContractId={contractId}
+                            currentContractId={searchInput}
                           />
                         </div>
                       )}
@@ -410,6 +398,13 @@ export default function ContractExplorer() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* No results message */}
+      {!loading && !loadingTree && !events && !transactionTree && searchInput && !error && (
+        <div className="text-center py-4 text-gray-500">
+          No results found. Try a different search term.
         </div>
       )}
     </div>
