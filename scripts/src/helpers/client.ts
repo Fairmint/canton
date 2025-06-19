@@ -490,4 +490,46 @@ export class TransferAgentClient {
             throw error;
         }
     }
+
+    async uploadPackage(filename: string): Promise<any> {
+        try {
+            // Check if file exists
+            if (!fs.existsSync(filename)) {
+                throw new Error(`File not found: ${filename}`);
+            }
+
+            const headers = await this.getHeaders();
+            
+            // Remove Content-Type header to let axios set it automatically for file upload
+            delete headers['Content-Type'];
+            
+            // Read the file as a buffer
+            const fileBuffer = fs.readFileSync(filename);
+            
+            const response = await this.axiosInstance.post(
+                `${this.provider.LEDGER_API_URL}/packages`,
+                fileBuffer,
+                { 
+                    headers: {
+                        ...headers,
+                        'Content-Type': 'application/octet-stream'
+                    }
+                }
+            );
+            
+            await this.logRequestResponse(
+                `${this.provider.LEDGER_API_URL}/packages`,
+                { filename, fileSize: fileBuffer.length },
+                response.data
+            );
+            
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const errorData = error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message;
+                throw new Error(`Failed to upload package: ${errorData}`);
+            }
+            throw error;
+        }
+    }
 }

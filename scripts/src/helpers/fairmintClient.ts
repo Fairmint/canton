@@ -4,14 +4,14 @@ import { CreateContractResponse } from './types';
 
 // Application specific constants
 const TEMPLATES = {
-    FAIRMINT_ADMIN_SERVICE: '#OpenCapTable-v00:FairmintAdminService:FairmintAdminService'
+    FAIRMINT_ADMIN_SERVICE: '#OpenCapTable-v01:FairmintAdminService:FairmintAdminService'
 } as const;
 
 export class FairmintClient {
     private client: TransferAgentClient;
 
-    constructor(config: TransferAgentConfig) {
-        this.client = new TransferAgentClient(config);
+    constructor(config: TransferAgentConfig, providerName?: string) {
+        this.client = new TransferAgentClient(config, providerName);
     }
 
     async createFairmintAdminService(): Promise<CreateContractResponse> {
@@ -49,15 +49,38 @@ export class FairmintClient {
         return response;
     }
 
-    async acceptIssuerAuthorization(authorizationContractId: string, name: string, authorizedShares: number, issuerPartyId: string): Promise<string> {
-        const response = await this.client.exerciseCommand({
-            templateId: '#OpenCapTable-v00:IssuerAuthorization:IssuerAuthorization',
-            contractId: authorizationContractId,
-            choice: 'CreateIssuer',
-            choiceArgument: {
+    async acceptIssuerAuthorization(
+        authorizationContractId: string, 
+        name: string, 
+        authorizedShares: number, 
+        issuerPartyId: string,
+        paymentDetails?: {
+            amount: number;
+            inputs: any[];
+            context: any;
+            walletProvider: string;
+        }
+    ): Promise<string> {
+        const choice = paymentDetails ? 'PayFeeAndCreateIssuer' : 'CreateIssuer';
+        const choiceArgument = paymentDetails 
+            ? {
+                name,
+                authorizedShares,
+                feeAmount: paymentDetails.amount,
+                inputs: paymentDetails.inputs,
+                context: paymentDetails.context,
+                walletProvider: paymentDetails.walletProvider
+            }
+            : {
                 name,
                 authorizedShares
-            },
+            };
+
+        const response = await this.client.exerciseCommand({
+            templateId: '#OpenCapTable-v01:IssuerAuthorization:IssuerAuthorization',
+            contractId: authorizationContractId,
+            choice,
+            choiceArgument,
             actAs: [issuerPartyId]
         }) as any;
 
@@ -69,7 +92,7 @@ export class FairmintClient {
 
     async createStockClass(issuerContractId: string, stockClassType: string, shares: number, issuerPartyId: string): Promise<{stockClassContractId: string, updatedIssuerContractId: string}> {
         const response = await this.client.exerciseCommand({
-            templateId: '#OpenCapTable-v00:Issuer:Issuer',
+            templateId: '#OpenCapTable-v01:Issuer:Issuer',
             contractId: issuerContractId,
             choice: 'CreateStockClass',
             choiceArgument: {
@@ -88,7 +111,7 @@ export class FairmintClient {
 
     async proposeIssueStock(stockClassContractId: string, recipientPartyId: string, quantity: number, issuerPartyId: string): Promise<{proposalContractId: string, updatedStockClassContractId: string}> {
         const response = await this.client.exerciseCommand({
-            templateId: '#OpenCapTable-v00:StockClass:StockClass',
+            templateId: '#OpenCapTable-v01:StockClass:StockClass',
             contractId: stockClassContractId,
             choice: 'ProposeIssueStock',
             choiceArgument: {
@@ -107,7 +130,7 @@ export class FairmintClient {
 
     async acceptIssueStockProposal(proposalContractId: string, recipientPartyId: string): Promise<string> {
         const response = await this.client.exerciseCommand({
-            templateId: '#OpenCapTable-v00:StockClass:IssueStockClassProposal',
+            templateId: '#OpenCapTable-v01:StockClass:IssueStockClassProposal',
             contractId: proposalContractId,
             choice: 'AcceptIssueStockProposal',
             choiceArgument: {},
@@ -122,7 +145,7 @@ export class FairmintClient {
 
     async proposeTransfer(stockPositionContractId: string, recipientPartyId: string, quantity: number, ownerPartyId: string): Promise<{transferProposalContractId: string, updatedStockPositionContractId: string}> {
         const response = await this.client.exerciseCommand({
-            templateId: '#OpenCapTable-v00:StockPosition:StockPosition',
+            templateId: '#OpenCapTable-v01:StockPosition:StockPosition',
             contractId: stockPositionContractId,
             choice: 'ProposeTransfer',
             choiceArgument: {
@@ -141,7 +164,7 @@ export class FairmintClient {
 
     async acceptTransfer(transferProposalContractId: string, recipientPartyId: string): Promise<string> {
         const response = await this.client.exerciseCommand({
-            templateId: '#OpenCapTable-v00:StockPosition:StockTransferProposal',
+            templateId: '#OpenCapTable-v01:StockPosition:StockTransferProposal',
             contractId: transferProposalContractId,
             choice: 'AcceptTransfer',
             choiceArgument: {},
