@@ -184,8 +184,12 @@ export class TransferAgentClient {
         formData.append('grant_type', 'client_credentials');
         formData.append('client_id', this.config.clientId);
         formData.append('client_secret', this.config.clientSecret);
-        formData.append('audience', this.config.audience);
-        formData.append('scope', this.config.scope);
+        if(this.config.audience) {
+            formData.append('audience', this.config.audience);
+        }
+        if(this.config.scope) {
+            formData.append('scope', this.config.scope);
+        }
 
         try {
             const response = await this.makePostRequest<AuthResponse>(
