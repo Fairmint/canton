@@ -19,35 +19,40 @@ if (result.error && fs.existsSync(parentEnvPath)) {
     }
 }
 
+export interface ProviderConfig {
+    PROVIDER_NAME: string;
+    AUTH_URL: string;
+    LEDGER_API_URL: string;
+    CLIENT_ID: string;
+    AUDIENCE: string;
+    CLIENT_SECRET: string;
+    FAIRMINT_PARTY_ID: string;
+    FAIRMINT_USER_ID: string;
+}
+
 export class TransferAgentConfig {
-    readonly authUrl: string;
-    readonly ledgerUrl: string;
-    readonly clientId: string;
-    readonly clientSecret: string;
-    readonly fairmintPartyId: string;
-    readonly fairmintUserId: string;
-    readonly audience: string;
+    providers: ProviderConfig[];
 
-    constructor(isMainnet: boolean = false) {
-        this.authUrl = process.env.AUTH_URL || '';
-        if (!this.authUrl) {
-            throw new Error('AUTH_URL environment variable is not set');
+    constructor() {
+        // Parse the PROVIDERS environment variable as JSON
+        const providersJson = process.env.PROVIDERS || '[]';
+        try {
+            this.providers = JSON.parse(providersJson);
+        } catch (error) {
+            console.error('Failed to parse PROVIDERS environment variable:', error);
+            this.providers = [];
         }
-        this.ledgerUrl = process.env.LEDGER_API_URL || '';
-        if (!this.ledgerUrl) {
-            throw new Error('LEDGER_API_URL environment variable is not set');
-        }
-        this.audience = process.env.AUDIENCE || ''; // Optional field
-        this.clientId = process.env.CLIENT_ID || '';
-        if (!this.clientId) {
-            throw new Error('CLIENT_ID environment variable is not set');
-        }
-        this.clientSecret = process.env.CLIENT_SECRET || '';
-        if (!this.clientSecret) {
-            throw new Error('CLIENT_SECRET environment variable is not set');
-        }
+    }
 
-        this.fairmintPartyId = process.env.FAIRMINT_PARTY_ID || ''; // Optional field
-        this.fairmintUserId = process.env.FAIRMINT_USER_ID || ''; // Optional field
+    getProviderByName(name: string): ProviderConfig | undefined {
+        return this.providers.find(provider => provider.PROVIDER_NAME === name);
+    }
+
+    getProviderByIndex(index: number): ProviderConfig | undefined {
+        return this.providers[index];
+    }
+
+    getAllProviders(): ProviderConfig[] {
+        return this.providers;
     }
 }

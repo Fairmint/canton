@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { TransferAgentClient } from '@/../../scripts/src/helpers/client';
 import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
 
-const config = new TransferAgentConfig(false);
-const client = new TransferAgentClient(config);
+const config = new TransferAgentConfig();
 
 // Safe JSON serialization function to handle non-serializable data
 function safeStringify(obj: any) {
@@ -30,6 +29,12 @@ export async function GET(
   { params }: { params: { offset: string } }
 ) {
   try {
+    const { searchParams } = new URL(request.url);
+    const provider = searchParams.get('provider');
+
+    // Create client with specified provider or default
+    const client = new TransferAgentClient(config, provider || undefined);
+    
     const result = await client.getTransactionTreeByOffset(params.offset);
     
     // Try to serialize the result safely

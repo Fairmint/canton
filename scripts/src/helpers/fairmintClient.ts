@@ -18,9 +18,9 @@ export class FairmintClient {
         const response = await this.client.createCommand({
             templateId: TEMPLATES.FAIRMINT_ADMIN_SERVICE,
             createArguments: {
-                fairmint: this.client.getFairmintPartyId(),
+                fairmint: this.client.provider.FAIRMINT_PARTY_ID,
             },
-            actAs: [this.client.getFairmintPartyId()],
+            actAs: [this.client.provider.FAIRMINT_PARTY_ID],
         });
         console.debug(`Created FairmintAdminService with contract ID: ${response.contractId}`);
         return response;
@@ -34,7 +34,7 @@ export class FairmintClient {
             choiceArgument: {
                 issuer: issuerPartyId
             },
-            actAs: [this.client.getFairmintPartyId()]
+            actAs: [this.client.provider.FAIRMINT_PARTY_ID]
         }) as any;
 
         // Extract the IssuerAuthorization contract ID from the response

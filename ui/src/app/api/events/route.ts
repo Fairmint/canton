@@ -5,8 +5,7 @@ import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 
-const config = new TransferAgentConfig(false);
-const client = new TransferAgentClient(config);
+const config = new TransferAgentConfig();
 
 export async function GET(
     request: Request
@@ -22,8 +21,9 @@ export async function GET(
             );
         }
 
-        // Get contractId from searchParams parameter
+        // Get contractId and provider from searchParams
         const contractId = searchParams.get('contractId');
+        const provider = searchParams.get('provider');
 
         if (!contractId) {
             return NextResponse.json(
@@ -31,6 +31,9 @@ export async function GET(
                 { status: 400 }
             );
         }
+
+        // Create client with specified provider or default
+        const client = new TransferAgentClient(config, provider || undefined);
 
         const events = await client.getEventsByContractId(contractId);
         return NextResponse.json(events);

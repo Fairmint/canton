@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { TransferAgentClient } from '@/../../scripts/src/helpers/client';
 import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
 
-const config = new TransferAgentConfig(false);
+const config = new TransferAgentConfig();
 const client = new TransferAgentClient(config);
 
 export async function GET(

@@ -3,7 +3,7 @@ import { TransferAgentConfig } from './helpers/config';
 
 async function testUpdateById() {
     try {
-        const config = new TransferAgentConfig(false);
+        const config = new TransferAgentConfig();
         const client = new TransferAgentClient(config);
 
         // Example update ID - you would need to replace this with a real update ID from your ledger
