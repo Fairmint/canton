@@ -187,9 +187,7 @@ export class TransferAgentClient {
         if(this.config.audience) {
             formData.append('audience', this.config.audience);
         }
-        if(this.config.scope) {
-            formData.append('scope', this.config.scope);
-        }
+        formData.append('scope', 'daml_ledger_api');
 
         try {
             const response = await this.makePostRequest<AuthResponse>(
