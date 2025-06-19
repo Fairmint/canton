@@ -7,6 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Initialize submodules
+          command: git submodule update --init --recursive
+      - run:
           name: Install DAML
           command: |
             curl -sSL https://get.daml.com/ | sh -s 3.3.0-snapshot.20250507.0
