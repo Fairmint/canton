@@ -4,7 +4,7 @@ import { FairmintClient } from './helpers/fairmintClient';
 async function main() {
     try {
         const config = new TransferAgentConfig();
-        const client = new FairmintClient(config);
+        const client = new FairmintClient(config, "5N DevNet");
 
         // Pre-req: Create FairmintAdminService [One time]
         const {contractId} = await client.createFairmintAdminService();
@@ -20,7 +20,15 @@ async function main() {
             authorizationContractId,
             'Acme Inc',
             15_000_000,
-            issuerPartyId
+            issuerPartyId,
+            {
+                amount: 1.42,
+                inputs: [],
+                context: {
+                    amuletRules: '',
+                },
+                walletProvider: '5N DevNet'
+            }
         );
 
         // Pre-req: Create parties for Bob and Alice

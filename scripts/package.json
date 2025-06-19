@@ -5,6 +5,7 @@
   "main": "dist/demo.js",
   "scripts": {
     "start:demo": "ts-node src/demo.ts",
+    "upload:package": "ts-node src/uploadPackage.ts",
     "build": "tsc",
     "tailLogs": "stern participant --kubeconfig .secrets/devnet --config ./stern.yaml"
   },
