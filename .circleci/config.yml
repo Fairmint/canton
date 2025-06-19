@@ -5,10 +5,16 @@ jobs:
     docker:
       - image: cimg/openjdk:23.0.2
     steps:
-      - checkout
       - run:
           name: Setup Git LFS authentication
           command: |
+            # Validate that GITHUB_TOKEN is set
+            if [ -z "$GITHUB_TOKEN" ]; then
+              echo "Error: GITHUB_TOKEN environment variable is not set"
+              echo "Please add GITHUB_TOKEN to your CircleCI project environment variables"
+              exit 1
+            fi
+            
             # Install Git LFS if not already available
             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
             sudo apt-get install git-lfs
@@ -26,9 +32,29 @@ jobs:
             
             # Initialize Git LFS
             git lfs install
+      - checkout:
+          path: .
+          submodules: false
       - run:
-          name: Initialize submodules
-          command: git submodule update --init --recursive
+          name: Initialize submodules with LFS
+          command: |
+            # Ensure Git LFS is configured for submodules
+            git config --global credential.helper store
+            echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > ~/.git-credentials
+            
+            # Debug: Check Git LFS configuration
+            echo "Git LFS version:"
+            git lfs version
+            
+            echo "Git credential configuration:"
+            git config --global --list | grep credential
+            
+            # Initialize and update submodules with LFS support
+            git submodule update --init --recursive
+            
+            # Debug: Check if LFS files were downloaded
+            echo "Checking for LFS files in submodules:"
+            find . -name "*.png" -exec git lfs ls-files {} \; 2>/dev/null || echo "No LFS files found or LFS not tracking PNG files"
       - run:
           name: Install DAML
           command: |
