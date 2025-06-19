@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import EventDetails from './EventDetails';
 
 interface CreatedEvent {
@@ -76,6 +77,8 @@ interface TransactionTree {
 }
 
 export default function ContractExplorer() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<ContractEvents | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,15 +89,43 @@ export default function ContractExplorer() {
   const [shouldFetch, setShouldFetch] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Handle client-side initialization
+  // Handle client-side initialization and URL params
   useEffect(() => {
     setIsClient(true);
-    const savedInput = localStorage.getItem('lastSearchInput');
-    if (savedInput) {
-      setSearchInput(savedInput);
+    
+    // Get search term from URL params
+    const urlSearchTerm = searchParams.get('q');
+    if (urlSearchTerm) {
+      setSearchInput(urlSearchTerm);
       setShouldFetch(true);
+    } else {
+      // Fallback to localStorage if no URL param
+      const savedInput = localStorage.getItem('lastSearchInput');
+      if (savedInput) {
+        setSearchInput(savedInput);
+        setShouldFetch(true);
+      }
     }
-  }, []);
+
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      const currentSearchTerm = new URLSearchParams(window.location.search).get('q');
+      if (currentSearchTerm !== searchInput) {
+        setSearchInput(currentSearchTerm || '');
+        setShouldFetch(true);
+        // Clear previous results when navigating
+        setEvents(null);
+        setTransactionTree(null);
+        setError(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [searchParams]);
 
   useEffect(() => {
     if (shouldFetch && searchInput && isClient) {
@@ -108,6 +139,7 @@ export default function ContractExplorer() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('lastSearchInput', value);
     }
+    // Don't update URL here - only update when actually searching
   };
 
   // Helper function to determine search type based on input length and format
@@ -205,16 +237,46 @@ export default function ContractExplorer() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Update URL and create history entry for the search
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (searchInput) {
+        url.searchParams.set('q', searchInput);
+      } else {
+        url.searchParams.delete('q');
+      }
+      
+      // Use pushState to create a new history entry for the search
+      window.history.pushState({}, '', url.toString());
+    }
+    
     setShouldFetch(true);
   };
 
   const handleOffsetClick = (offset: string) => {
     setSearchInput(offset);
+    
+    // Update URL and create history entry
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('q', offset);
+      window.history.pushState({}, '', url.toString());
+    }
+    
     setShouldFetch(true);
   };
 
   const handleContractIdClick = (contractId: string) => {
     handleSearchInputChange(contractId);
+    
+    // Update URL and create history entry
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('q', contractId);
+      window.history.pushState({}, '', url.toString());
+    }
+    
     setShouldFetch(true);
   };
 
@@ -247,7 +309,7 @@ export default function ContractExplorer() {
           </div>
           {searchType && (
             <p className="mt-1 text-sm text-gray-500">
-              Detected: {searchType === 'contract' ? 'Contract ID' : searchType === 'updateId' ? 'Update ID' : 'Offset'}
+              Search by: {searchType === 'contract' ? 'Contract ID' : searchType === 'updateId' ? 'Update ID' : 'Offset'}
             </p>
           )}
         </div>
