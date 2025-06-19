@@ -5,7 +5,7 @@ import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 
-const config = new TransferAgentConfig(false);
+const config = new TransferAgentConfig();
 const client = new TransferAgentClient(config);
 
 export async function GET(

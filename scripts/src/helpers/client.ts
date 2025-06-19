@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { TransferAgentConfig } from './config';
+import { TransferAgentConfig, ProviderConfig } from './config';
 import { AuthResponse, CommandRequest, CommandResponse, CreateContractResponse, UpdateByIdRequest, UpdateByIdResponse, TransactionTree } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -25,22 +25,36 @@ interface ExerciseCommandParams {
 
 export class TransferAgentClient {
     private config: TransferAgentConfig;
+    public provider: ProviderConfig; // The selected provider configuration
     private bearerToken: string | null = null;
     private sequenceNumber: number = 1;
     private axiosInstance: AxiosInstance;
     private logDir: string;
 
-    constructor(config: TransferAgentConfig) {
+    constructor(config: TransferAgentConfig, providerName?: string) {
         this.config = config;
+        
+        // Select the provider by name or default to index 0
+        if (providerName) {
+            const provider = config.getProviderByName(providerName);
+            if (!provider) {
+                throw new Error(`Provider '${providerName}' not found. Available providers: ${config.getAllProviders().map(p => p.PROVIDER_NAME).join(', ')}`);
+            }
+            this.provider = provider;
+        } else {
+            // Default to first provider (index 0)
+            const provider = config.getProviderByIndex(0);
+            if (!provider) {
+                throw new Error('No providers available in configuration');
+            }
+            this.provider = provider;
+        }
+        
         this.axiosInstance = axios.create();
         this.logDir = path.join(__dirname, '../../logs');
         if (!fs.existsSync(this.logDir)) {
             fs.mkdirSync(this.logDir, { recursive: true });
         }
-    }
-
-    getFairmintPartyId(): string {
-        return this.config.fairmintPartyId;
     }
 
     private async logRequestResponse(url: string, request: any, response: any) {
@@ -182,16 +196,16 @@ export class TransferAgentClient {
     private async authenticate(): Promise<string> {
         const formData = new URLSearchParams();
         formData.append('grant_type', 'client_credentials');
-        formData.append('client_id', this.config.clientId);
-        formData.append('client_secret', this.config.clientSecret);
-        if(this.config.audience) {
-            formData.append('audience', this.config.audience);
+        formData.append('client_id', this.provider.CLIENT_ID);
+        formData.append('client_secret', this.provider.CLIENT_SECRET);
+        if(this.provider.AUDIENCE) {
+            formData.append('audience', this.provider.AUDIENCE);
         }
         formData.append('scope', 'daml_ledger_api');
 
         try {
             const response = await this.makePostRequest<AuthResponse>(
-                this.config.authUrl,
+                this.provider.AUTH_URL,
                 formData.toString(),
                 {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -237,7 +251,7 @@ export class TransferAgentClient {
         try {
             const headers = await this.getHeaders();
             const response = await this.makePostRequest<CommandResponse>(
-                `${this.config.ledgerUrl}/commands/submit-and-wait-for-transaction-tree`,
+                `${this.provider.LEDGER_API_URL}/commands/submit-and-wait-for-transaction-tree`,
                 command,
                 headers
             );
@@ -276,7 +290,7 @@ export class TransferAgentClient {
         try {
             const headers = await this.getHeaders();
             const response = await this.makePostRequest<CommandResponse>(
-                `${this.config.ledgerUrl}/commands/submit-and-wait-for-transaction-tree`,
+                `${this.provider.LEDGER_API_URL}/commands/submit-and-wait-for-transaction-tree`,
                 command,
                 headers
             );
@@ -294,7 +308,7 @@ export class TransferAgentClient {
         try {
             const headers = await this.getHeaders();
             const response = await this.makePostRequest<{ partyDetails: {party: string }}>(
-                `${this.config.ledgerUrl}/parties`,
+                `${this.provider.LEDGER_API_URL}/parties`,
                 {
                     partyIdHint: `FM:${partyIdHint}`,
                     identityProviderId: ""
@@ -333,9 +347,9 @@ export class TransferAgentClient {
     async setUserRights(partyId: string): Promise<void> {
         const headers = await this.getHeaders();
         await this.makePostRequest(
-                `${this.config.ledgerUrl}/users/${this.config.fairmintUserId}/rights`,
+                `${this.provider.LEDGER_API_URL}/users/${this.provider.FAIRMINT_USER_ID}/rights`,
                 {
-                    userId: this.config.fairmintUserId,
+                    userId: this.provider.FAIRMINT_USER_ID,
                     rights: [
                         {
                             kind: {
@@ -358,7 +372,7 @@ export class TransferAgentClient {
         try {
             const headers = await this.getHeaders();
             return await this.makeGetRequest(
-                `${this.config.ledgerUrl}/parties`,
+                `${this.provider.LEDGER_API_URL}/parties`,
                 headers
             );
         } catch (error) {
@@ -374,10 +388,10 @@ export class TransferAgentClient {
         try {
             const headers = await this.getHeaders();
             const response = await this.makePostRequest(
-                `${this.config.ledgerUrl}/events/events-by-contract-id`,
+                `${this.provider.LEDGER_API_URL}/events/events-by-contract-id`,
                 {
                     contractId,
-                    requestingParties: [this.config.fairmintPartyId]
+                    requestingParties: [this.provider.FAIRMINT_PARTY_ID]
                 },
                 headers
             );
@@ -395,7 +409,7 @@ export class TransferAgentClient {
         try {
             const headers = await this.getHeaders();
             return await this.makeGetRequest(
-                `${this.config.ledgerUrl}/updates/transaction-tree-by-offset/${offset}?parties=${this.config.fairmintPartyId}`,
+                `${this.provider.LEDGER_API_URL}/updates/transaction-tree-by-offset/${offset}?parties=${this.provider.FAIRMINT_PARTY_ID}`,
                 headers
             );
         } catch (error) {
@@ -411,10 +425,10 @@ export class TransferAgentClient {
         try {
             const headers = await this.getHeaders();
             const response = await this.makePostRequest<UpdateByIdResponse>(
-                `${this.config.ledgerUrl}/updates/update-by-id`,
+                `${this.provider.LEDGER_API_URL}/updates/update-by-id`,
                 {
                     updateId,
-                    requestingParties: [this.config.fairmintPartyId],
+                    requestingParties: [this.provider.FAIRMINT_PARTY_ID],
                     updateFormat: {
                         includeTransactions: {
                             eventFormat: {
@@ -445,7 +459,7 @@ export class TransferAgentClient {
             
             // Build query parameters
             const queryParams = new URLSearchParams({
-                parties: this.config.fairmintPartyId
+                parties: this.provider.FAIRMINT_PARTY_ID
             });
 
             // Add optional formatting parameters if provided
@@ -457,12 +471,12 @@ export class TransferAgentClient {
             }
 
             const response = await this.makeGetRequest<TransactionTree>(
-                `${this.config.ledgerUrl}/updates/transaction-tree-by-id/${updateId}?${queryParams.toString()}`,
+                `${this.provider.LEDGER_API_URL}/updates/transaction-tree-by-id/${updateId}?${queryParams.toString()}`,
                 headers
             );
             
             await this.logRequestResponse(
-                `${this.config.ledgerUrl}/updates/transaction-tree-by-id/${updateId}`,
+                `${this.provider.LEDGER_API_URL}/updates/transaction-tree-by-id/${updateId}`,
                 { updateId, options },
                 response
             );
