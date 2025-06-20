@@ -1,12 +1,12 @@
-import { TransferAgentClient } from './client';
-import { TransferAgentConfig } from './config';
+import { JsonApiClient } from './jsonApiClient';
 import { CreateContractResponse } from './types';
 import { Ledger } from '@daml/ledger';
 import { ContractId, Optional } from '@daml/types';
-import { FairmintAdminService } from '../../libs/daml.js/OpenCapTable-v01-0.0.1';
-import { AmuletRules, TransferPreapproval, TransferPreapproval_SendResult } from '../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/AmuletRules';
-import { OpenMiningRound } from '../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/Round';
-import { FeaturedAppRight } from '../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/Amulet/module';
+// import { FairmintAdminService } from '../../../libs/daml.js/OpenCapTable-v01-0.0.1/lib';
+// import { AmuletRules, TransferPreapproval, TransferPreapproval_SendResult } from '../../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/AmuletRules';
+// import { OpenMiningRound } from '../../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/Round';
+// import { FeaturedAppRight } from '../../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/Amulet/module';
+import { ProviderConfig } from '../shared';
 
 
 // Application specific constants
@@ -15,20 +15,20 @@ const TEMPLATES = {
 } as const;
 
 export class FairmintClient {
-    private client: TransferAgentClient;
+    private client: JsonApiClient;
     private ledger: Ledger | null = null;
 
-    constructor(config: TransferAgentConfig, providerName?: string) {
-        this.client = new TransferAgentClient(config, providerName);
+    constructor(config: ProviderConfig, providerName?: string) {
+        this.client = new JsonApiClient(config, providerName);
     }
 
     async createFairmintAdminService(): Promise<CreateContractResponse> {
         const response = await this.client.createCommand({
             templateId: TEMPLATES.FAIRMINT_ADMIN_SERVICE,
             createArguments: {
-                fairmint: this.client.provider.FAIRMINT_PARTY_ID,
+                fairmint: this.client.provider.JSON_API.PARTY_ID,
             },
-            actAs: [this.client.provider.FAIRMINT_PARTY_ID],
+            actAs: [this.client.provider.JSON_API.PARTY_ID],
         });
         console.debug(`Created FairmintAdminService with contract ID: ${response.contractId}`);
         return response;
@@ -38,16 +38,33 @@ export class FairmintClient {
         this.ledger = new Ledger(
             {
                 token: await this.client.getBearerToken(),
-                httpBaseUrl: this.client.provider.LEDGER_API_URL.substring(0, this.client.provider.LEDGER_API_URL.length - 2),
+                httpBaseUrl: this.client.provider.JSON_API.API_URL.substring(0, this.client.provider.JSON_API.API_URL.length - 2),
                 reconnectThreshold: 10,
                 multiplexQueryStreams: true,
             }
         );
-        const response = await this.ledger.exercise(FairmintAdminService.FairmintAdminService.AuthorizeIssuer, contractId as ContractId<FairmintAdminService.FairmintAdminService>, {
-                issuer: issuerPartyId,
-            } as FairmintAdminService.AuthorizeIssuer);
 
-        return response[0];
+         const response = await this.client.exerciseCommand({
+            templateId: TEMPLATES.FAIRMINT_ADMIN_SERVICE,
+            contractId,
+            choice: 'AuthorizeIssuer',
+            choiceArgument: {
+                issuer: issuerPartyId
+            },
+            actAs: [this.client.provider.JSON_API.PARTY_ID]
+        }) as any;
+
+        // Extract the IssuerAuthorization contract ID from the response
+        const authorizationContractId = response.transactionTree.eventsById['0'].ExercisedTreeEvent.value.exerciseResult;
+        console.debug(`Successfully authorized issuer with contract ID: ${authorizationContractId}`);
+        return authorizationContractId;
+
+        // TODO: Migrate to ledger API
+        // const response = await this.ledger.exercise(FairmintAdminService.FairmintAdminService.AuthorizeIssuer, contractId as ContractId<FairmintAdminService.FairmintAdminService>, {
+        //         issuer: issuerPartyId,
+        //     } as FairmintAdminService.AuthorizeIssuer);
+
+        // return response[0];
     }
 
     async createParty(partyIdHint: string) {
@@ -184,48 +201,38 @@ export class FairmintClient {
         return stockPositionContractId;
     }
 
-    /**
-     * Exercise the TransferPreapproval_Send choice on a TransferPreapproval contract.
-     * 
-     * @param contractId - The contract ID of the TransferPreapproval contract
-     * @param choiceArgument - The choice argument with the following structure:
-     *   - context: PaymentTransferContext containing amuletRules and transfer context
-     *   - inputs: Array of TransferInput objects (InputAmulet, InputAppRewardCoupon, etc.)
-     *   - amount: Decimal amount as string
-     *   - sender: Party ID as string
-     *   - description: Optional description as string
-     */
-    async transferPreapprovalSend(
-        contractId: string,
-        choiceArgument: {
-            context: {
-                amuletRules: ContractId<AmuletRules>;
-                context: {
-                    openMiningRound: ContractId<OpenMiningRound>;
-                    issuingMiningRounds: any;
-                    validatorRights: any;
-                    featuredAppRight: Optional<ContractId<FeaturedAppRight>>;
-                };
-            };
-            inputs: any[];
-            amount: string;
-            sender: string;
-            description: Optional<string>;
-        }
-    ): Promise<TransferPreapproval_SendResult> {
-        this.ledger = new Ledger(
-            {
-                token: await this.client.getBearerToken(),
-                httpBaseUrl: this.client.provider.LEDGER_API_URL.substring(0, this.client.provider.LEDGER_API_URL.length - 2),
-                reconnectThreshold: 10,
-                multiplexQueryStreams: true,
-            }
-        );
-        const response = await this.ledger.exercise(
-            TransferPreapproval.TransferPreapproval_Send,
-            contractId as ContractId<TransferPreapproval>,
-            choiceArgument
-        );
-        return response[0];
-    }
+    // TODO: Integrate with Amulet
+    // async transferPreapprovalSend(
+    //     contractId: string,
+    //     choiceArgument: {
+    //         context: {
+    //             amuletRules: ContractId<AmuletRules>;
+    //             context: {
+    //                 openMiningRound: ContractId<OpenMiningRound>;
+    //                 issuingMiningRounds: any;
+    //                 validatorRights: any;
+    //                 featuredAppRight: Optional<ContractId<FeaturedAppRight>>;
+    //             };
+    //         };
+    //         inputs: any[];
+    //         amount: string;
+    //         sender: string;
+    //         description: Optional<string>;
+    //     }
+    // ): Promise<TransferPreapproval_SendResult> {
+    //     this.ledger = new Ledger(
+    //         {
+    //             token: await this.client.getBearerToken(),
+    //             httpBaseUrl: this.client.provider.JSON_API.API_URL.substring(0, this.client.provider.JSON_API.API_URL.length - 2),
+    //             reconnectThreshold: 10,
+    //             multiplexQueryStreams: true,
+    //         }
+    //     );
+    //     const response = await this.ledger.exercise(
+    //         TransferPreapproval.TransferPreapproval_Send,
+    //         contractId as ContractId<TransferPreapproval>,
+    //         choiceArgument
+    //     );
+    //     return response[0];
+    // }
 }

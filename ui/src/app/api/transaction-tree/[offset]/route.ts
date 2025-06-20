@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { TransferAgentClient } from '@/../../scripts/src/helpers/client';
-import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
+import { JsonAPIClient } from '@/../../scripts/src/helpers/client';
+import { ProviderConfig } from '@/../../scripts/src/helpers/config';
 
-const config = new TransferAgentConfig();
+const config = new ProviderConfig();
 
 // Safe JSON serialization function to handle non-serializable data
 function safeStringify(obj: any) {
@@ -33,7 +33,7 @@ export async function GET(
     const provider = searchParams.get('provider');
 
     // Create client with specified provider or default
-    const client = new TransferAgentClient(config, provider || undefined);
+    const client = new JsonAPIClient(config, provider || undefined);
     
     const result = await client.getTransactionTreeByOffset(params.offset);
     

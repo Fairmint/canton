@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { TransferAgentClient } from '@/../../scripts/src/helpers/client';
-import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
+import { JsonAPIClient } from '@/../../scripts/src/helpers/client';
+import { ProviderConfig } from '@/../../scripts/src/helpers/config';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 
-const config = new TransferAgentConfig();
+const config = new ProviderConfig();
 
 export async function GET(
     request: Request
@@ -33,7 +33,7 @@ export async function GET(
         }
 
         // Create client with specified provider or default
-        const client = new TransferAgentClient(config, provider || undefined);
+        const client = new JsonAPIClient(config, provider || undefined);
 
         const events = await client.getEventsByContractId(contractId);
         return NextResponse.json(events);

@@ -1,10 +1,9 @@
-import { TransferAgentClient } from './helpers/client';
-import { TransferAgentConfig } from './helpers/config';
+import { JsonApiClient,ProviderConfig } from './clients';
 
 async function testTransactionTreeById() {
     try {
-        const config = new TransferAgentConfig();
-        const client = new TransferAgentClient(config);
+        const config = new ProviderConfig();
+        const client = new JsonApiClient(config);
 
         // Example update ID - you would need to replace this with a real update ID from your ledger
         const updateId = '1220df70c63d95b67b3b19d8a6d931f3a50185d7ac95964414f875f18a7f15071ebc';

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
+import { ProviderConfig } from '@/../../scripts/src/helpers/config';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 
-const config = new TransferAgentConfig();
+const config = new ProviderConfig();
 
 export async function GET() {
     try {

@@ -1,10 +1,9 @@
-import { TransferAgentConfig } from './helpers/config';
-import { FairmintClient } from './helpers/fairmintClient';
+import { ProviderConfig, FairmintClient } from './clients';
 
 async function main() {
     try {
-        const config = new TransferAgentConfig();
-        const client = new FairmintClient(config);
+        const config = new ProviderConfig();
+        const client = new FairmintClient(config, '5N DevNet');
 
         // Pre-req: Create FairmintAdminService [One time]
         const {contractId} = await client.createFairmintAdminService();

@@ -1,7 +1,3 @@
-export interface AuthResponse {
-    access_token: string;
-}
-
 export interface CreateCommand {
     CreateCommand: {
         templateId: string;

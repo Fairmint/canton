@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
+import { ProviderConfigENVFormat } from '.';
 
 // Load environment variables with fallback to parent directory
 const currentEnvPath = '.env';
@@ -19,40 +20,30 @@ if (result.error && fs.existsSync(parentEnvPath)) {
     }
 }
 
-export interface ProviderConfig {
-    PROVIDER_NAME: string;
-    AUTH_URL: string;
-    LEDGER_API_URL: string;
-    CLIENT_ID: string;
-    AUDIENCE: string;
-    CLIENT_SECRET: string;
-    FAIRMINT_PARTY_ID: string;
-    FAIRMINT_USER_ID: string;
-}
 
-export class TransferAgentConfig {
-    providers: ProviderConfig[];
+export class ProviderConfig {
+    providers: ProviderConfigENVFormat[];
 
     constructor() {
         // Parse the PROVIDERS environment variable as JSON
-        const providersJson = process.env.PROVIDERS || '[]';
+        const providersJson = process.env.CANTON_PROVIDERS || '[]';
         try {
             this.providers = JSON.parse(providersJson);
         } catch (error) {
-            console.error('Failed to parse PROVIDERS environment variable:', error);
+            console.error('Failed to parse CANTON_PROVIDERS environment variable:', error);
             this.providers = [];
         }
     }
 
-    getProviderByName(name: string): ProviderConfig | undefined {
+    getProviderByName(name: string): ProviderConfigENVFormat | undefined {
         return this.providers.find(provider => provider.PROVIDER_NAME === name);
     }
 
-    getProviderByIndex(index: number): ProviderConfig | undefined {
+    getProviderByIndex(index: number): ProviderConfigENVFormat | undefined {
         return this.providers[index];
     }
 
-    getAllProviders(): ProviderConfig[] {
+    getAllProviders(): ProviderConfigENVFormat[] {
         return this.providers;
     }
 }

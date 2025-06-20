@@ -1,7 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { TransferAgentConfig } from './helpers/config';
-import { TransferAgentClient } from './helpers/client';
+import { ProviderConfig, JsonApiClient } from './clients';
 
 interface UploadOptions {
     packageName: string;
@@ -87,7 +86,7 @@ async function findDarFile(packagePath: string, packageName: string): Promise<st
     return darPath;
 }
 
-async function uploadDarFile(darPath: string, client: TransferAgentClient, verbose: boolean = false): Promise<void> {
+async function uploadDarFile(darPath: string, client: JsonApiClient, verbose: boolean = false): Promise<void> {
     console.log(`Uploading DAR file: ${darPath}`);
     
     try {
@@ -109,8 +108,8 @@ async function uploadPackage(options: UploadOptions): Promise<void> {
         console.log(`Using provider: ${providerName}`);
         
         // Initialize the client
-        const config = new TransferAgentConfig();
-        const client = new TransferAgentClient(config, providerName);
+        const config = new ProviderConfig();
+        const client = new JsonApiClient(config, providerName);
         
         // Step 1: Build the package
         const packagePath = await buildPackage(packageName, verbose);
