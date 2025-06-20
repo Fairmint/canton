@@ -50,7 +50,9 @@ export interface ExercisedTreeEvent {
             choiceArgument: Record<string, any>;
             actingParties: string[];
             witnessParties: string[];
-            exerciseResult: string;
+            exerciseResult: {
+                [key: string]: any;
+            };
             packageName: string;
             consuming: boolean;
         };
