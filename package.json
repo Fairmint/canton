@@ -1,11 +1,13 @@
 {
   "scripts": {
-    "build": "cd src && daml build --all",
+    "build": "npm run build:daml && npm run build:codegen && npm run build:scripts && npm run build:ui",
+    "build:codegen": "cd daml/OpenCapTable-v01 && daml codegen js .daml/dist/OpenCapTable-v01-0.0.1.dar -o ../../scripts/libs/daml.js",
+    "build:daml": "cd daml && daml build --all",
+    "build:scripts": "cd scripts && npm run build",
+    "build:ui": "cd ui && npm run build",
     "clean": "find . -type d \\( -name '.daml' -o -name 'logs' \\) -exec rm -rf {} +",
-    "codegen": "cd src/OpenCapTable-v01 && daml codegen js .daml/dist/OpenCapTable-v01-0.0.1.dar -o ../../scripts/libs/daml.js",
     "docker": "docker pull digitalasset/canton-open-source && docker run --rm -it digitalasset/canton-open-source --no-tty -C canton.participants.p.ledger-api.port=1234",
-    "sandbox": "npm run build && cd src/Sandbox && daml start",
-    "test": "npm run build && cd src/Test && daml test",
+    "test": "npm run build && cd daml/Test && daml test",
     "lint": "eslint . --fix --max-warnings=0",
     "lint:check": "eslint . --max-warnings=0",
     "format": "prettier --write .",

@@ -12,7 +12,7 @@ async function buildPackage(
   packageName: string,
   verbose: boolean = false
 ): Promise<string> {
-  const packagePath = path.join(process.cwd(), '../src', packageName);
+  const packagePath = path.join(process.cwd(), '../daml', packageName);
 
   // Check if package directory exists
   if (!fs.existsSync(packagePath)) {
