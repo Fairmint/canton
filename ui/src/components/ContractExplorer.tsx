@@ -316,26 +316,52 @@ export default function ContractExplorer() {
     <div className='space-y-6'>
       {/* Unified Search Form */}
       <form onSubmit={handleSubmit} className='space-y-4'>
-        <div>
-          <label
-            htmlFor='searchInput'
-            className='block text-sm font-medium text-gray-700'
-          >
-            Search
-          </label>
-          <div className='mt-1 flex gap-2'>
-            <div className='flex-1'>
-              <input
-                type='text'
-                id='searchInput'
-                value={searchInput}
-                onChange={e => handleSearchInputChange(e.target.value)}
-                className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black'
-                placeholder={placeholderText}
-                required
-              />
+        <div className='grid grid-cols-1 lg:grid-cols-4 gap-4'>
+          {/* Left Column - Search Elements */}
+          <div className='lg:col-span-3 space-y-4'>
+            <div>
+              <label
+                htmlFor='searchInput'
+                className='block text-sm font-medium text-gray-700'
+              >
+                Search
+              </label>
+              <div className='mt-1'>
+                <input
+                  type='text'
+                  id='searchInput'
+                  value={searchInput}
+                  onChange={e => handleSearchInputChange(e.target.value)}
+                  className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black'
+                  placeholder={placeholderText}
+                  required
+                />
+              </div>
+              {searchTypeLabel && (
+                <p className='mt-1 text-sm text-gray-500'>
+                  Search by: {searchTypeLabel}
+                </p>
+              )}
             </div>
-            <div className='w-48'>
+            <div>
+              <button
+                type='submit'
+                className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              >
+                Search
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column - Provider Elements */}
+          <div className='lg:col-span-1'>
+            <label
+              htmlFor='providerSelect'
+              className='block text-sm font-medium text-gray-700'
+            >
+              Provider
+            </label>
+            <div className='mt-1'>
               <select
                 id='providerSelect'
                 value={selectedProvider}
@@ -355,28 +381,15 @@ export default function ContractExplorer() {
                   ))
                 )}
               </select>
-              <div className='mt-2 text-xs text-gray-600 space-y-1'>
-                <AccountInfo
-                  selectedProviderDetails={selectedProviderDetails}
-                  walletBalance={walletBalance}
-                  loadingBalance={loadingBalance}
-                />
-              </div>
+            </div>
+            <div className='mt-2 text-xs text-gray-600 space-y-1'>
+              <AccountInfo
+                selectedProviderDetails={selectedProviderDetails}
+                walletBalance={walletBalance}
+                loadingBalance={loadingBalance}
+              />
             </div>
           </div>
-          {searchTypeLabel && (
-            <p className='mt-1 text-sm text-gray-500'>
-              Search by: {searchTypeLabel}
-            </p>
-          )}
-        </div>
-        <div>
-          <button
-            type='submit'
-            className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-          >
-            Search
-          </button>
         </div>
       </form>
 
