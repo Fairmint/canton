@@ -2,5 +2,5 @@
 
 ## Scripts
 
-* `npm run sandbox`: Starts the development server.
-* `npm run test`: Runs unit tests.
+- `npm run sandbox`: Starts the development server.
+- `npm run test`: Runs unit tests.

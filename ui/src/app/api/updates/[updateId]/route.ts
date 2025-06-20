@@ -14,8 +14,13 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching update by ID:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch update by ID' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to fetch update by ID',
+      },
       { status: 500 }
     );
   }
-} 
+}

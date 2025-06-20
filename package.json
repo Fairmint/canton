@@ -5,6 +5,19 @@
     "codegen": "cd src/OpenCapTable-v01 && daml codegen js .daml/dist/OpenCapTable-v01-0.0.1.dar -o ../../scripts/libs/daml.js",
     "docker": "docker pull digitalasset/canton-open-source && docker run --rm -it digitalasset/canton-open-source --no-tty -C canton.participants.p.ledger-api.port=1234",
     "sandbox": "npm run build && cd src/Sandbox && daml start",
-    "test": "npm run build && cd src/Test && daml test"
+    "test": "npm run build && cd src/Test && daml test",
+    "lint": "cd scripts && npm run lint && cd ../ui && npm run lint",
+    "lint:check": "cd scripts && npm run lint && cd ../ui && npm run lint:check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5"
   }
 }

@@ -35,42 +35,44 @@ export default function TransactionTree({
   const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
-      <div className="px-6 py-4">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Transaction Tree</h3>
-        <div className="space-y-4">
+    <div className='bg-white shadow overflow-hidden sm:rounded-md'>
+      <div className='px-6 py-4'>
+        <h3 className='text-lg font-medium text-gray-900 mb-4'>
+          Transaction Tree
+        </h3>
+        <div className='space-y-4'>
           <div>
-            <p className="text-sm text-gray-500">
+            <p className='text-sm text-gray-500'>
               <strong>Update ID:</strong>{' '}
               {onSearchClick ? (
                 <button
-                  type="button"
+                  type='button'
                   onClick={() => onSearchClick(transaction.updateId)}
-                  className="text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs inline-block align-bottom"
+                  className='text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs inline-block align-bottom'
                   title={transaction.updateId}
                 >
-                  {transaction.updateId.length > 12 
-                    ? `${transaction.updateId.substring(0, 6)}..${transaction.updateId.substring(transaction.updateId.length - 6)}` 
+                  {transaction.updateId.length > 12
+                    ? `${transaction.updateId.substring(0, 6)}..${transaction.updateId.substring(transaction.updateId.length - 6)}`
                     : transaction.updateId}
                 </button>
               ) : (
-                <span 
-                  className="truncate max-w-xs inline-block align-bottom"
+                <span
+                  className='truncate max-w-xs inline-block align-bottom'
                   title={transaction.updateId}
                 >
-                  {transaction.updateId.length > 12 
-                    ? `${transaction.updateId.substring(0, 6)}..${transaction.updateId.substring(transaction.updateId.length - 6)}` 
+                  {transaction.updateId.length > 12
+                    ? `${transaction.updateId.substring(0, 6)}..${transaction.updateId.substring(transaction.updateId.length - 6)}`
                     : transaction.updateId}
                 </span>
               )}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className='text-sm text-gray-500'>
               <strong>Offset:</strong>{' '}
               {onSearchClick ? (
                 <button
-                  type="button"
+                  type='button'
                   onClick={() => onSearchClick(transaction.offset.toString())}
-                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                  className='text-blue-600 hover:text-blue-800 hover:underline'
                 >
                   {transaction.offset}
                 </button>
@@ -78,23 +80,43 @@ export default function TransactionTree({
                 <span>{transaction.offset}</span>
               )}
             </p>
-            
+
             <button
-              type="button"
+              type='button'
               onClick={() => setShowDetails(!showDetails)}
-              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              className='text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1'
             >
               {showDetails ? (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className='w-4 h-4'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
                   </svg>
                   Hide Details
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg
+                    className='w-4 h-4'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M9 5l7 7-7 7'
+                    />
                   </svg>
                   Show Details
                 </>
@@ -102,24 +124,32 @@ export default function TransactionTree({
             </button>
 
             {showDetails && (
-              <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
-                <p className="text-sm text-gray-500">
+              <div className='mt-2 space-y-2 pl-4 border-l-2 border-gray-200'>
+                <p className='text-sm text-gray-500'>
                   <strong>Synchronizer ID:</strong> {transaction.synchronizerId}
                 </p>
-                <p className="text-sm text-gray-500">
-                  <strong>Effective At:</strong> {new Date(transaction.effectiveAt).toLocaleString()}
+                <p className='text-sm text-gray-500'>
+                  <strong>Effective At:</strong>{' '}
+                  {new Date(transaction.effectiveAt).toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500">
-                  <strong>Record Time:</strong> {new Date(transaction.recordTime).toLocaleString()}
+                <p className='text-sm text-gray-500'>
+                  <strong>Record Time:</strong>{' '}
+                  {new Date(transaction.recordTime).toLocaleString()}
                 </p>
                 {transaction.traceContext && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">
+                  <div className='mt-2'>
+                    <p className='text-sm text-gray-500'>
                       <strong>Trace Context:</strong>
                     </p>
-                    <div className="ml-4 text-sm text-gray-600">
-                      <p><strong>Traceparent:</strong> {transaction.traceContext.traceparent}</p>
-                      <p><strong>Tracestate:</strong> {transaction.traceContext.tracestate || 'null'}</p>
+                    <div className='ml-4 text-sm text-gray-600'>
+                      <p>
+                        <strong>Traceparent:</strong>{' '}
+                        {transaction.traceContext.traceparent}
+                      </p>
+                      <p>
+                        <strong>Tracestate:</strong>{' '}
+                        {transaction.traceContext.tracestate || 'null'}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -128,12 +158,14 @@ export default function TransactionTree({
           </div>
 
           <div>
-            <h4 className="text-md font-medium text-gray-900 mb-2">Events</h4>
+            <h4 className='text-md font-medium text-gray-900 mb-2'>Events</h4>
             {Object.entries(transaction.eventsById).map(([nodeId, event]) => (
-              <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
+              <div key={nodeId} className='mb-4 p-4 bg-gray-50 rounded'>
                 {event.ExercisedTreeEvent && (
                   <div>
-                    <h5 className="font-medium text-gray-900 mb-2">Exercise Event (ID: {nodeId})</h5>
+                    <h5 className='font-medium text-gray-900 mb-2'>
+                      Exercise Event (ID: {nodeId})
+                    </h5>
                     <EventDetails
                       data={event.ExercisedTreeEvent.value}
                       onSearchClick={onSearchClick}
@@ -144,7 +176,9 @@ export default function TransactionTree({
 
                 {event.CreatedTreeEvent && (
                   <div>
-                    <h5 className="font-medium text-gray-900 mb-2">Create Event (ID: {nodeId})</h5>
+                    <h5 className='font-medium text-gray-900 mb-2'>
+                      Create Event (ID: {nodeId})
+                    </h5>
                     <EventDetails
                       data={event.CreatedTreeEvent.value}
                       onSearchClick={onSearchClick}
@@ -159,4 +193,4 @@ export default function TransactionTree({
       </div>
     </div>
   );
-} 
+}

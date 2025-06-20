@@ -1,6 +1,6 @@
 packages:
-# Deployed packages
-- OpenCapTable-v01
+  # Deployed packages
+  - OpenCapTable-v01
 
-# Test packages
-- Test
+  # Test packages
+  - Test
