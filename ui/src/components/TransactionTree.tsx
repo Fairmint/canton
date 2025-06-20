@@ -23,15 +23,13 @@ export interface Transaction {
 
 interface TransactionTreeProps {
   transaction: Transaction;
-  onOffsetClick?: (offset: string) => void;
-  onContractIdClick?: (contractId: string) => void;
+  onSearchClick?: (value: string) => void;
   currentContractId?: string;
 }
 
 export default function TransactionTree({
   transaction,
-  onOffsetClick,
-  onContractIdClick,
+  onSearchClick,
   currentContractId,
 }: TransactionTreeProps) {
   const [showDetails, setShowDetails] = useState(false);
@@ -43,10 +41,42 @@ export default function TransactionTree({
         <div className="space-y-4">
           <div>
             <p className="text-sm text-gray-500">
-              <strong>Update ID:</strong> {transaction.updateId}
+              <strong>Update ID:</strong>{' '}
+              {onSearchClick ? (
+                <button
+                  type="button"
+                  onClick={() => onSearchClick(transaction.updateId)}
+                  className="text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs inline-block align-bottom"
+                  title={transaction.updateId}
+                >
+                  {transaction.updateId.length > 12 
+                    ? `${transaction.updateId.substring(0, 6)}..${transaction.updateId.substring(transaction.updateId.length - 6)}` 
+                    : transaction.updateId}
+                </button>
+              ) : (
+                <span 
+                  className="truncate max-w-xs inline-block align-bottom"
+                  title={transaction.updateId}
+                >
+                  {transaction.updateId.length > 12 
+                    ? `${transaction.updateId.substring(0, 6)}..${transaction.updateId.substring(transaction.updateId.length - 6)}` 
+                    : transaction.updateId}
+                </span>
+              )}
             </p>
             <p className="text-sm text-gray-500">
-              <strong>Offset:</strong> {transaction.offset}
+              <strong>Offset:</strong>{' '}
+              {onSearchClick ? (
+                <button
+                  type="button"
+                  onClick={() => onSearchClick(transaction.offset.toString())}
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  {transaction.offset}
+                </button>
+              ) : (
+                <span>{transaction.offset}</span>
+              )}
             </p>
             
             <button
@@ -106,8 +136,7 @@ export default function TransactionTree({
                     <h5 className="font-medium text-gray-900 mb-2">Exercise Event (ID: {nodeId})</h5>
                     <EventDetails
                       data={event.ExercisedTreeEvent.value}
-                      onOffsetClick={onOffsetClick}
-                      onContractIdClick={onContractIdClick}
+                      onSearchClick={onSearchClick}
                       currentContractId={currentContractId}
                     />
                   </div>
@@ -118,8 +147,7 @@ export default function TransactionTree({
                     <h5 className="font-medium text-gray-900 mb-2">Create Event (ID: {nodeId})</h5>
                     <EventDetails
                       data={event.CreatedTreeEvent.value}
-                      onOffsetClick={onOffsetClick}
-                      onContractIdClick={onContractIdClick}
+                      onSearchClick={onSearchClick}
                       currentContractId={currentContractId}
                     />
                   </div>

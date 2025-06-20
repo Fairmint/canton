@@ -225,7 +225,7 @@ export default function ContractExplorer() {
   };
 
   // Unified click handler for both offset and contract ID clicks
-  const handleItemClick = (value: string) => {
+  const handleSearchClick = (value: string) => {
     setSearchInput(value);
     updateURL(value, selectedProvider);
     setShouldFetch(true);
@@ -248,8 +248,7 @@ export default function ContractExplorer() {
       <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
       <EventDetails
         data={data}
-        onOffsetClick={handleItemClick}
-        onContractIdClick={handleItemClick}
+        onSearchClick={handleSearchClick}
         currentContractId={searchInput}
       />
     </div>
@@ -341,8 +340,7 @@ export default function ContractExplorer() {
       ) : transactionTree && (
         <TransactionTree
           transaction={transactionTree}
-          onOffsetClick={handleItemClick}
-          onContractIdClick={handleItemClick}
+          onSearchClick={handleSearchClick}
           currentContractId={searchInput}
         />
       )}
