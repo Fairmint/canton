@@ -194,14 +194,12 @@ const EventDetails: React.FC<EventDetailsProps> = ({
         </p>
       )}
       {exerciseResult && (
-        <p className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500">
           <strong>Exercise Result:</strong>{' '}
-          <ContractIdDisplay
-            contractId={String(exerciseResult)}
-            isClickable={!!onSearchClick && String(exerciseResult) !== currentContractId}
-            onClick={onSearchClick ? () => onSearchClick(String(exerciseResult)) : undefined}
-          />
-        </p>
+          <pre className="mt-1 text-sm text-gray-900 bg-white p-2 rounded">
+            {JSON.stringify(exerciseResult, null, 2)}
+          </pre>
+        </div>
       )}
       {offset && onSearchClick && (
         <p className="text-sm text-gray-500">

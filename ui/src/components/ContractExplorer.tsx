@@ -214,7 +214,10 @@ export default function ContractExplorer() {
       }
       
       const data = await fetchData(url, setLoadingTree);
-      if (data) setTransactionTree(data.transaction);
+      if (data) {
+        console.log(data);
+        setTransactionTree(data.transaction);
+      } 
     }
   };
 
