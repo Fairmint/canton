@@ -90,7 +90,10 @@ jobs:
             cd scripts && npm install && cd ..
             cd ui && npm install && cd ..
       - run:
-          name: Build and Test
+          name: Build
+          command: npm run build
+      - run:
+          name: Test
           command: npm run test
       - run:
           name: Lint & Format
