@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-interface EventData {
+export interface EventData {
   templateId: string;
   packageName?: string;
   createdAt?: string;
@@ -19,8 +19,7 @@ interface EventData {
 
 interface EventDetailsProps {
   data: EventData;
-  onOffsetClick?: (offset: string) => void;
-  onContractIdClick?: (contractId: string) => void;
+  onSearchClick?: (value: string) => void;
   currentContractId?: string;
 }
 
@@ -117,8 +116,7 @@ const PartyList: React.FC<{
 
 const EventDetails: React.FC<EventDetailsProps> = ({
   data,
-  onOffsetClick,
-  onContractIdClick,
+  onSearchClick,
   currentContractId,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
@@ -165,8 +163,8 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           <strong>Contract ID:</strong>{' '}
           <ContractIdDisplay
             contractId={contractId}
-            isClickable={!!onContractIdClick && contractId !== currentContractId}
-            onClick={onContractIdClick ? () => onContractIdClick(contractId) : undefined}
+            isClickable={!!onSearchClick && contractId !== currentContractId}
+            onClick={onSearchClick ? () => onSearchClick(contractId) : undefined}
           />
         </p>
       )}
@@ -200,17 +198,17 @@ const EventDetails: React.FC<EventDetailsProps> = ({
           <strong>Exercise Result:</strong>{' '}
           <ContractIdDisplay
             contractId={String(exerciseResult)}
-            isClickable={!!onContractIdClick && String(exerciseResult) !== currentContractId}
-            onClick={onContractIdClick ? () => onContractIdClick(String(exerciseResult)) : undefined}
+            isClickable={!!onSearchClick && String(exerciseResult) !== currentContractId}
+            onClick={onSearchClick ? () => onSearchClick(String(exerciseResult)) : undefined}
           />
         </p>
       )}
-      {offset && onOffsetClick && (
+      {offset && onSearchClick && (
         <p className="text-sm text-gray-500">
           <strong>Offset:</strong>{' '}
           <button
             type="button"
-            onClick={() => onOffsetClick(offset)}
+            onClick={() => onSearchClick(offset)}
             className="text-blue-600 hover:text-blue-800 underline"
           >
             {offset}
