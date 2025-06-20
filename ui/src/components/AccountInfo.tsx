@@ -1,5 +1,5 @@
 import React from 'react';
-import { truncatePartyId, TruncatedText } from '../utils/textUtils';
+import { truncatePartyId, TruncatedText, formatNumberWithCommas } from '../utils/textUtils';
 
 interface Provider {
   name: string;
@@ -43,7 +43,7 @@ export default function AccountInfo({
         {loadingBalance ? (
           'Loading...'
         ) : walletBalance ? (
-          `${walletBalance.effective_unlocked_qty} CC`
+          `${formatNumberWithCommas(walletBalance.effective_unlocked_qty)} CC`
         ) : (
           'N/A'
         )}
@@ -52,7 +52,7 @@ export default function AccountInfo({
         {loadingBalance ? (
           'Loading...'
         ) : walletBalance ? (
-          `${walletBalance.effective_locked_qty} CC`
+          `${formatNumberWithCommas(walletBalance.effective_locked_qty)} CC`
         ) : (
           'N/A'
         )}
@@ -61,7 +61,7 @@ export default function AccountInfo({
         {loadingBalance ? (
           'Loading...'
         ) : walletBalance ? (
-          `${walletBalance.total_holding_fees} CC`
+          `${formatNumberWithCommas(walletBalance.total_holding_fees)} CC`
         ) : (
           'N/A'
         )}
@@ -70,7 +70,7 @@ export default function AccountInfo({
         {loadingBalance ? (
           'Loading...'
         ) : walletBalance ? (
-          `${walletBalance.round}`
+          `${formatNumberWithCommas(walletBalance.round)}`
         ) : (
           'N/A'
         )}

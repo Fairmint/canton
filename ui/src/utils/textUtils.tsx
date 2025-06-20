@@ -31,6 +31,16 @@ export const truncateTemplateId = (
   return { truncatedId, boldPart };
 };
 
+export const formatNumberWithCommas = (value: string | number): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return String(value);
+  
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 10
+  });
+};
+
 export const TruncatedText: React.FC<{
   displayText: string;
   fullText: string;
