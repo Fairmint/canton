@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { TransferAgentClient } from '@/../../scripts/src/helpers/client';
-import { TransferAgentConfig } from '@/../../scripts/src/helpers/config';
+import { JsonApiClient, ProviderConfig } from '@/../../scripts/src/clients';
 
-const config = new TransferAgentConfig();
-const client = new TransferAgentClient(config);
+const config = new ProviderConfig();
+const client = new JsonApiClient(config);
 
 export async function GET(
   request: Request,
@@ -15,8 +14,13 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching update by ID:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch update by ID' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to fetch update by ID',
+      },
       { status: 500 }
     );
   }
-} 
+}
