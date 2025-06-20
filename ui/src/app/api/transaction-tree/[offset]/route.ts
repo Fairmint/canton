@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { JsonAPIClient } from '@/../../scripts/src/helpers/client';
-import { ProviderConfig } from '@/../../scripts/src/helpers/config';
+import { JsonApiClient, ProviderConfig } from '@/../../scripts/src/clients';
+
 
 const config = new ProviderConfig();
 
@@ -33,7 +33,7 @@ export async function GET(
     const provider = searchParams.get('provider');
 
     // Create client with specified provider or default
-    const client = new JsonAPIClient(config, provider || undefined);
+    const client = new JsonApiClient(config, provider || undefined);
     
     const result = await client.getTransactionTreeByOffset(params.offset);
     

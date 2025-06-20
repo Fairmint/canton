@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ProviderConfig } from '@/../../scripts/src/helpers/config';
+import { JsonApiClient, ProviderConfig } from '@/../../scripts/src/clients';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';

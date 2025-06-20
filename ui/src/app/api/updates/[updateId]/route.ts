@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { JsonAPIClient } from '@/../../scripts/src/helpers/client';
-import { ProviderConfig } from '@/../../scripts/src/helpers/config';
+import { JsonApiClient, ProviderConfig } from '@/../../scripts/src/clients';
 
 const config = new ProviderConfig();
-const client = new JsonAPIClient(config);
+const client = new JsonApiClient(config);
 
 export async function GET(
   request: Request,

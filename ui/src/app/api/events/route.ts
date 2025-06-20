@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { JsonAPIClient } from '@/../../scripts/src/helpers/client';
-import { ProviderConfig } from '@/../../scripts/src/helpers/config';
+import { JsonApiClient, ProviderConfig } from '@/../../scripts/src/clients';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -33,7 +32,7 @@ export async function GET(
         }
 
         // Create client with specified provider or default
-        const client = new JsonAPIClient(config, provider || undefined);
+        const client = new JsonApiClient(config, provider || undefined);
 
         const events = await client.getEventsByContractId(contractId);
         return NextResponse.json(events);
