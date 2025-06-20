@@ -1,8 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
-import * as fs from 'fs';
-import * as path from 'path';
-import { ProviderConfig, ProviderConfigENVFormat } from '../shared';
+import { AbstractClient, ProviderConfig, ProviderConfigENVFormat } from '../shared';
 
-export class ValidatorApiClient {
-   
+export class ValidatorApiClient extends AbstractClient {
+    constructor(config: ProviderConfig, providerName?: string) {
+        super(config, 'VALIDATOR_API', providerName);
+    }
 }
