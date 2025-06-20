@@ -1,3 +1,6 @@
+import React from 'react';
+import { truncatePartyId, TruncatedText } from '../utils/textUtils';
+
 interface Provider {
   name: string;
   displayName: string;
@@ -25,7 +28,16 @@ export default function AccountInfo({
 }: AccountInfoProps) {
   return (
     <div className='mt-2 text-xs text-gray-600 space-y-1'>
-      <div>Party ID: <span className='font-mono'>{selectedProviderDetails?.partyId}</span></div>
+      <div>Party ID: <span className='font-mono'>
+        {selectedProviderDetails?.partyId ? (
+          <TruncatedText 
+            displayText={truncatePartyId(selectedProviderDetails.partyId)} 
+            fullText={selectedProviderDetails.partyId} 
+          />
+        ) : (
+          'N/A'
+        )}
+      </span></div>
       <div>User ID: <span className='font-mono'>{selectedProviderDetails?.userId}</span></div>
       <div>Balance: <span className='font-mono'>
         {loadingBalance ? (
