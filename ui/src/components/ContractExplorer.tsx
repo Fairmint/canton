@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EventDetails, { EventData } from './EventDetails';
 import TransactionTree, { Transaction } from './TransactionTree';
@@ -88,6 +88,59 @@ export default function ContractExplorer() {
     }
   };
 
+  // Simplified search type detection
+  const getSearchType = (input: string): SearchType => {
+    const inputStr = String(input).trim();
+    if (!inputStr) return null;
+
+    if (inputStr.length > 100 && /^[0-9a-f]+$/i.test(inputStr))
+      return 'contract';
+    if (inputStr.length > 50 && /^[0-9a-f]+$/i.test(inputStr))
+      return 'updateId';
+    if (inputStr.length < 20 && /^\d+$/.test(inputStr)) return 'offset';
+
+    return null;
+  };
+
+  const performSearch = useCallback(async () => {
+    if (!searchInput) {
+      setError('Search input is required');
+      return;
+    }
+
+    const searchType = getSearchType(searchInput);
+    if (!searchType) {
+      setError(
+        'Invalid input format. Please enter a valid contract ID, update ID, or offset.'
+      );
+      return;
+    }
+
+    clearResults();
+
+    if (searchType === 'contract') {
+      const params = new URLSearchParams({ contractId: searchInput });
+      if (selectedProvider) params.append('provider', selectedProvider);
+      const data = await fetchData(`/api/events?${params}`, setLoading);
+      if (data) setEvents(data);
+    } else {
+      const isById = searchType === 'updateId';
+      let url = isById
+        ? `/api/transaction-tree-by-id/${searchInput}?eventFormat=verbose`
+        : `/api/transaction-tree/${searchInput}`;
+
+      if (selectedProvider) {
+        url += `${isById ? '&' : '?'}provider=${encodeURIComponent(selectedProvider)}`;
+      }
+
+      const data = await fetchData(url, setLoadingTree);
+      if (data) {
+        console.log(data);
+        setTransactionTree(data.transaction);
+      }
+    }
+  }, [searchInput, selectedProvider]);
+
   // Handle client-side initialization and URL params
   useEffect(() => {
     setIsClient(true);
@@ -132,7 +185,7 @@ export default function ContractExplorer() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [searchParams]);
+  }, [searchParams, searchInput, selectedProvider]);
 
   // Load available providers
   useEffect(() => {
@@ -164,7 +217,7 @@ export default function ContractExplorer() {
       performSearch();
       setShouldFetch(false);
     }
-  }, [searchInput, shouldFetch, isClient, selectedProvider]);
+  }, [searchInput, shouldFetch, isClient, selectedProvider, performSearch]);
 
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
@@ -180,59 +233,6 @@ export default function ContractExplorer() {
 
     if (searchInput) {
       setShouldFetch(true);
-    }
-  };
-
-  // Simplified search type detection
-  const getSearchType = (input: string): SearchType => {
-    const inputStr = String(input).trim();
-    if (!inputStr) return null;
-
-    if (inputStr.length > 100 && /^[0-9a-f]+$/i.test(inputStr))
-      return 'contract';
-    if (inputStr.length > 50 && /^[0-9a-f]+$/i.test(inputStr))
-      return 'updateId';
-    if (inputStr.length < 20 && /^\d+$/.test(inputStr)) return 'offset';
-
-    return null;
-  };
-
-  const performSearch = async () => {
-    if (!searchInput) {
-      setError('Search input is required');
-      return;
-    }
-
-    const searchType = getSearchType(searchInput);
-    if (!searchType) {
-      setError(
-        'Invalid input format. Please enter a valid contract ID, update ID, or offset.'
-      );
-      return;
-    }
-
-    clearResults();
-
-    if (searchType === 'contract') {
-      const params = new URLSearchParams({ contractId: searchInput });
-      if (selectedProvider) params.append('provider', selectedProvider);
-      const data = await fetchData(`/api/events?${params}`, setLoading);
-      if (data) setEvents(data);
-    } else {
-      const isById = searchType === 'updateId';
-      let url = isById
-        ? `/api/transaction-tree-by-id/${searchInput}?eventFormat=verbose`
-        : `/api/transaction-tree/${searchInput}`;
-
-      if (selectedProvider) {
-        url += `${isById ? '&' : '?'}provider=${encodeURIComponent(selectedProvider)}`;
-      }
-
-      const data = await fetchData(url, setLoadingTree);
-      if (data) {
-        console.log(data);
-        setTransactionTree(data.transaction);
-      }
     }
   };
 
