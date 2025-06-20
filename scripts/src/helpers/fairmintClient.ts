@@ -2,9 +2,12 @@ import { TransferAgentClient } from './client';
 import { TransferAgentConfig } from './config';
 import { CreateContractResponse } from './types';
 import { Ledger } from '@daml/ledger';
-import { ContractId } from '@daml/types';
+import { ContractId, Optional } from '@daml/types';
 import { FairmintAdminService } from '../../libs/daml.js/OpenCapTable-v01-0.0.1';
-import { AuthorizeIssuer } from '../../libs/daml.js/OpenCapTable-v01-0.0.1/lib/FairmintAdminService';
+import { AmuletRules, TransferPreapproval, TransferPreapproval_SendResult } from '../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/AmuletRules';
+import { OpenMiningRound } from '../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/Round';
+import { FeaturedAppRight } from '../../libs/daml.js/splice-amulet-0.1.9/lib/Splice/Amulet/module';
+
 
 // Application specific constants
 const TEMPLATES = {
@@ -179,5 +182,50 @@ export class FairmintClient {
         const stockPositionContractId = response.transactionTree.eventsById['1'].CreatedTreeEvent.value.contractId;
         console.debug(`${recipientPartyId} accepted transfer and received position with ID: ${stockPositionContractId}`);
         return stockPositionContractId;
+    }
+
+    /**
+     * Exercise the TransferPreapproval_Send choice on a TransferPreapproval contract.
+     * 
+     * @param contractId - The contract ID of the TransferPreapproval contract
+     * @param choiceArgument - The choice argument with the following structure:
+     *   - context: PaymentTransferContext containing amuletRules and transfer context
+     *   - inputs: Array of TransferInput objects (InputAmulet, InputAppRewardCoupon, etc.)
+     *   - amount: Decimal amount as string
+     *   - sender: Party ID as string
+     *   - description: Optional description as string
+     */
+    async transferPreapprovalSend(
+        contractId: string,
+        choiceArgument: {
+            context: {
+                amuletRules: ContractId<AmuletRules>;
+                context: {
+                    openMiningRound: ContractId<OpenMiningRound>;
+                    issuingMiningRounds: any;
+                    validatorRights: any;
+                    featuredAppRight: Optional<ContractId<FeaturedAppRight>>;
+                };
+            };
+            inputs: any[];
+            amount: string;
+            sender: string;
+            description: Optional<string>;
+        }
+    ): Promise<TransferPreapproval_SendResult> {
+        this.ledger = new Ledger(
+            {
+                token: await this.client.getBearerToken(),
+                httpBaseUrl: this.client.provider.LEDGER_API_URL.substring(0, this.client.provider.LEDGER_API_URL.length - 2),
+                reconnectThreshold: 10,
+                multiplexQueryStreams: true,
+            }
+        );
+        const response = await this.ledger.exercise(
+            TransferPreapproval.TransferPreapproval_Send,
+            contractId as ContractId<TransferPreapproval>,
+            choiceArgument
+        );
+        return response[0];
     }
 }
