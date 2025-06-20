@@ -1,6 +1,10 @@
 import { TransferAgentClient } from './client';
 import { TransferAgentConfig } from './config';
 import { CreateContractResponse } from './types';
+import { Ledger } from '@daml/ledger';
+import { ContractId } from '@daml/types';
+import { FairmintAdminService } from '../../libs/daml.js/OpenCapTable-v01-0.0.1';
+import { AuthorizeIssuer } from '../../libs/daml.js/OpenCapTable-v01-0.0.1/lib/FairmintAdminService';
 
 // Application specific constants
 const TEMPLATES = {
@@ -9,6 +13,7 @@ const TEMPLATES = {
 
 export class FairmintClient {
     private client: TransferAgentClient;
+    private ledger: Ledger | null = null;
 
     constructor(config: TransferAgentConfig, providerName?: string) {
         this.client = new TransferAgentClient(config, providerName);
@@ -27,20 +32,19 @@ export class FairmintClient {
     }
 
     async authorizeIssuer(contractId: string, issuerPartyId: string): Promise<string> {
-        const response = await this.client.exerciseCommand({
-            templateId: TEMPLATES.FAIRMINT_ADMIN_SERVICE,
-            contractId,
-            choice: 'AuthorizeIssuer',
-            choiceArgument: {
-                issuer: issuerPartyId
-            },
-            actAs: [this.client.provider.FAIRMINT_PARTY_ID]
-        }) as any;
+        this.ledger = new Ledger(
+            {
+                token: await this.client.getBearerToken(),
+                httpBaseUrl: this.client.provider.LEDGER_API_URL.substring(0, this.client.provider.LEDGER_API_URL.length - 2),
+                reconnectThreshold: 10,
+                multiplexQueryStreams: true,
+            }
+        );
+        const response = await this.ledger.exercise(FairmintAdminService.FairmintAdminService.AuthorizeIssuer, contractId as ContractId<FairmintAdminService.FairmintAdminService>, {
+                issuer: issuerPartyId,
+            } as FairmintAdminService.AuthorizeIssuer);
 
-        // Extract the IssuerAuthorization contract ID from the response
-        const authorizationContractId = response.transactionTree.eventsById['0'].ExercisedTreeEvent.value.exerciseResult;
-        console.debug(`Successfully authorized issuer with contract ID: ${authorizationContractId}`);
-        return authorizationContractId;
+        return response[0];
     }
 
     async createParty(partyIdHint: string) {

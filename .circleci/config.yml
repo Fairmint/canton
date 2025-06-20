@@ -87,6 +87,9 @@ jobs:
           name: Build and Test
           command: npm run test
       - run:
+          name: Codegen
+          command: npm run codegen
+      - run:
           name: Install and Build Scripts
           command: |
             cd scripts

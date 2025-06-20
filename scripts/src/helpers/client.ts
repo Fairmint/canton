@@ -26,7 +26,7 @@ interface ExerciseCommandParams {
 export class TransferAgentClient {
     private config: TransferAgentConfig;
     public provider: ProviderConfig; // The selected provider configuration
-    private bearerToken: string | null = null;
+    public bearerToken: string | null = null;
     private sequenceNumber: number = 1;
     private axiosInstance: AxiosInstance;
     private logDir: string;
@@ -193,7 +193,7 @@ export class TransferAgentClient {
         }
     }
 
-    private async authenticate(): Promise<string> {
+    public async authenticate(): Promise<string> {
         const formData = new URLSearchParams();
         formData.append('grant_type', 'client_credentials');
         formData.append('client_id', this.provider.CLIENT_ID);
@@ -221,6 +221,13 @@ export class TransferAgentClient {
             }
             throw error;
         }
+    }
+
+    public async getBearerToken(): Promise<string> {
+        if (!this.bearerToken) {
+            await this.authenticate();
+        }
+        return this.bearerToken || '';
     }
 
     private async getHeaders(): Promise<Record<string, string>> {
