@@ -1,4 +1,4 @@
-import { JsonApiClient, ProviderConfig } from './clients';
+import { JsonApiClient, ProviderConfig } from '../clients';
 
 async function testUpdateById() {
   try {

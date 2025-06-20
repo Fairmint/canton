@@ -68,6 +68,14 @@ export class AbstractClient {
     if (scope) {
       formData.append('scope', scope);
     }
+    const username = this.provider[this.apiType]?.USERNAME;
+    if (username) {
+      formData.append('username', username);
+    }
+    const password = this.provider[this.apiType]?.PASSWORD;
+    if (password) {
+      formData.append('password', password);
+    }
 
     try {
       const response = await this.makePostRequest<AuthResponse>(
