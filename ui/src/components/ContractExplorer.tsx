@@ -8,6 +8,8 @@ import TransactionTree, { Transaction } from './TransactionTree';
 interface Provider {
   name: string;
   displayName: string;
+  partyId: string;
+  userId: string;
 }
 
 interface ContractEvents {
@@ -255,6 +257,9 @@ export default function ContractExplorer() {
     ? `${searchTypeLabel} detected`
     : 'Enter contract ID, update ID, or offset';
 
+  // Get the selected provider's details
+  const selectedProviderDetails = providers.find(p => p.name === selectedProvider);
+
   // Loading component
   const LoadingSpinner = ({ message }: { message: string }) => (
     <div className='text-center py-4'>{message}</div>
@@ -315,6 +320,11 @@ export default function ContractExplorer() {
                   ))
                 )}
               </select>
+              <div className='mt-2 text-xs text-gray-600 space-y-1'>
+                <div>Party ID: <span className='font-mono'>{selectedProviderDetails?.partyId}</span></div>
+                <div>User ID: <span className='font-mono'>{selectedProviderDetails?.userId}</span></div>
+                <div>Balance: <span className='font-mono'>[placeholder]</span></div>
+              </div>
             </div>
           </div>
           {searchTypeLabel && (

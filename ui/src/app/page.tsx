@@ -1,15 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
 import ContractExplorer from '@/components/ContractExplorer';
-
-function ContractExplorerWrapper() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <ContractExplorer />
-    </Suspense>
-  );
-}
 
 export default function Home() {
   return (
@@ -19,7 +10,7 @@ export default function Home() {
           <h1 className='text-3xl font-bold text-gray-900 mb-8'>
             Canton Contract Explorer
           </h1>
-          <ContractExplorerWrapper />
+          <ContractExplorer />
         </div>
       </div>
     </main>
