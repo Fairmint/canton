@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import EventDetails from './EventDetails';
 
 interface Provider {
@@ -81,8 +81,9 @@ interface TransactionTree {
   };
 }
 
+type SearchType = 'contract' | 'updateId' | 'offset' | null;
+
 export default function ContractExplorer() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [events, setEvents] = useState<ContractEvents | null>(null);
   const [loading, setLoading] = useState(false);
@@ -97,11 +98,37 @@ export default function ContractExplorer() {
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [loadingProviders, setLoadingProviders] = useState(false);
 
+  // URL management helper
+  const updateURL = (searchTerm?: string, provider?: string) => {
+    if (typeof window === 'undefined') return;
+    
+    const url = new URL(window.location.href);
+    if (searchTerm) {
+      url.searchParams.set('q', searchTerm);
+    } else {
+      url.searchParams.delete('q');
+    }
+    
+    if (provider) {
+      url.searchParams.set('p', provider);
+    } else {
+      url.searchParams.delete('p');
+    }
+    
+    window.history.pushState({}, '', url.toString());
+  };
+
+  // Clear results helper
+  const clearResults = () => {
+    setEvents(null);
+    setTransactionTree(null);
+    setError(null);
+  };
+
   // Handle client-side initialization and URL params
   useEffect(() => {
     setIsClient(true);
     
-    // Get search term and provider from URL params
     const urlSearchTerm = searchParams.get('q');
     const urlProvider = searchParams.get('p');
     
@@ -109,7 +136,6 @@ export default function ContractExplorer() {
       setSearchInput(urlSearchTerm);
       setShouldFetch(true);
     } else {
-      // Fallback to localStorage if no URL param
       const savedInput = localStorage.getItem('lastSearchInput');
       if (savedInput) {
         setSearchInput(savedInput);
@@ -129,10 +155,7 @@ export default function ContractExplorer() {
       if (currentSearchTerm !== searchInput) {
         setSearchInput(currentSearchTerm || '');
         setShouldFetch(true);
-        // Clear previous results when navigating
-        setEvents(null);
-        setTransactionTree(null);
-        setError(null);
+        clearResults();
       }
       
       if (currentProvider !== selectedProvider) {
@@ -141,10 +164,7 @@ export default function ContractExplorer() {
     };
 
     window.addEventListener('popstate', handlePopState);
-    
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [searchParams]);
 
   // Load available providers
@@ -156,12 +176,9 @@ export default function ContractExplorer() {
         if (response.ok) {
           const data = await response.json();
           setProviders(data);
-          // Set default provider if none selected
           if (!selectedProvider && data.length > 0) {
             setSelectedProvider(data[0].name);
           }
-        } else {
-          console.error('Failed to load providers');
         }
       } catch (error) {
         console.error('Error loading providers:', error);
@@ -187,55 +204,26 @@ export default function ContractExplorer() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('lastSearchInput', value);
     }
-    // Don't update URL here - only update when actually searching
   };
 
   const handleProviderChange = (provider: string) => {
     setSelectedProvider(provider);
+    updateURL(searchInput, provider);
+    clearResults();
     
-    // Update URL with new provider
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      if (provider) {
-        url.searchParams.set('p', provider);
-      } else {
-        url.searchParams.delete('p');
-      }
-      
-      // Use pushState to create a new history entry
-      window.history.pushState({}, '', url.toString());
-    }
-    
-    // Clear previous results when changing provider
-    setEvents(null);
-    setTransactionTree(null);
-    setError(null);
-    
-    // Re-fetch if there's a search term
     if (searchInput) {
       setShouldFetch(true);
     }
   };
 
-  // Helper function to determine search type based on input length and format
-  const getSearchType = (input: string): 'contract' | 'updateId' | 'offset' | null => {
+  // Simplified search type detection
+  const getSearchType = (input: string): SearchType => {
     const inputStr = String(input).trim();
     if (!inputStr) return null;
     
-    // Contract IDs are very long hex strings (typically 130+ characters)
-    if (inputStr.length > 100 && /^[0-9a-f]+$/i.test(inputStr)) {
-      return 'contract';
-    }
-    
-    // Update IDs are long hex strings (typically 60+ characters)
-    if (inputStr.length > 50 && /^[0-9a-f]+$/i.test(inputStr)) {
-      return 'updateId';
-    }
-    
-    // Offsets are short numbers
-    if (inputStr.length < 20 && /^\d+$/.test(inputStr)) {
-      return 'offset';
-    }
+    if (inputStr.length > 100 && /^[0-9a-f]+$/i.test(inputStr)) return 'contract';
+    if (inputStr.length > 50 && /^[0-9a-f]+$/i.test(inputStr)) return 'updateId';
+    if (inputStr.length < 20 && /^\d+$/.test(inputStr)) return 'offset';
     
     return null;
   };
@@ -252,10 +240,7 @@ export default function ContractExplorer() {
       return;
     }
 
-    // Clear previous results
-    setEvents(null);
-    setTransactionTree(null);
-    setError(null);
+    clearResults();
 
     if (searchType === 'contract') {
       await fetchEvents();
@@ -267,39 +252,20 @@ export default function ContractExplorer() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        contractId: searchInput
-      });
-
+      const params = new URLSearchParams({ contractId: searchInput });
       if (selectedProvider) {
         params.append('provider', selectedProvider);
       }
 
-      console.log('Fetching events for contract ID:', searchInput, 'with provider:', selectedProvider);
       const response = await fetch(`/api/events?${params}`);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to fetch events:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.url,
-          responseText: errorText
-        });
         throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('Received events data:', data);
       setEvents(data);
     } catch (err) {
-      console.error('Error in fetchEvents:', {
-        error: err,
-        contractId: searchInput,
-        provider: selectedProvider,
-        errorMessage: err instanceof Error ? err.message : 'Unknown error',
-        errorStack: err instanceof Error ? err.stack : undefined
-      });
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -309,46 +275,23 @@ export default function ContractExplorer() {
   const fetchTransactionTree = async (type: 'byId' | 'byOffset') => {
     setLoadingTree(true);
     try {
-      let url: string;
-      if (type === 'byId') {
-        url = `/api/transaction-tree-by-id/${searchInput}?eventFormat=verbose`;
-      } else {
-        url = `/api/transaction-tree/${searchInput}`;
-      }
+      let url = type === 'byId' 
+        ? `/api/transaction-tree-by-id/${searchInput}?eventFormat=verbose`
+        : `/api/transaction-tree/${searchInput}`;
       
       if (selectedProvider) {
         url += `${type === 'byId' ? '&' : '?'}provider=${encodeURIComponent(selectedProvider)}`;
       }
       
-      console.log('Fetching transaction tree:', { type, searchInput, url, provider: selectedProvider });
       const response = await fetch(url);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to fetch transaction tree:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.url,
-          responseText: errorText,
-          type,
-          searchInput,
-          provider: selectedProvider
-        });
         throw new Error(`Failed to fetch transaction tree: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('Received transaction tree data:', data);
       setTransactionTree(data);
     } catch (err) {
-      console.error('Error in fetchTransactionTree:', {
-        error: err,
-        type,
-        searchInput,
-        provider: selectedProvider,
-        errorMessage: err instanceof Error ? err.message : 'Unknown error',
-        errorStack: err instanceof Error ? err.stack : undefined
-      });
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoadingTree(false);
@@ -357,68 +300,21 @@ export default function ContractExplorer() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Update URL and create history entry for the search
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      if (searchInput) {
-        url.searchParams.set('q', searchInput);
-      } else {
-        url.searchParams.delete('q');
-      }
-      
-      if (selectedProvider) {
-        url.searchParams.set('p', selectedProvider);
-      } else {
-        url.searchParams.delete('p');
-      }
-      
-      // Use pushState to create a new history entry for the search
-      window.history.pushState({}, '', url.toString());
-    }
-    
+    updateURL(searchInput, selectedProvider);
     setShouldFetch(true);
   };
 
-  const handleOffsetClick = (offset: string) => {
-    setSearchInput(offset);
-    
-    // Update URL and create history entry
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('q', offset);
-      if (selectedProvider) {
-        url.searchParams.set('p', selectedProvider);
-      }
-      window.history.pushState({}, '', url.toString());
-    }
-    
-    setShouldFetch(true);
-  };
-
-  const handleContractIdClick = (contractId: string) => {
-    handleSearchInputChange(contractId);
-    
-    // Update URL and create history entry
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('q', contractId);
-      if (selectedProvider) {
-        url.searchParams.set('p', selectedProvider);
-      }
-      window.history.pushState({}, '', url.toString());
-    }
-    
+  // Unified click handler for both offset and contract ID clicks
+  const handleItemClick = (value: string) => {
+    setSearchInput(value);
+    updateURL(value, selectedProvider);
     setShouldFetch(true);
   };
 
   const searchType = getSearchType(searchInput);
-  const getPlaceholderText = () => {
-    if (searchType === 'contract') return 'Contract ID detected';
-    if (searchType === 'updateId') return 'Update ID detected';
-    if (searchType === 'offset') return 'Offset detected';
-    return 'Enter contract ID, update ID, or offset';
-  };
+  const placeholderText = searchType 
+    ? `${searchType === 'contract' ? 'Contract ID' : searchType === 'updateId' ? 'Update ID' : 'Offset'} detected`
+    : 'Enter contract ID, update ID, or offset';
 
   return (
     <div className="space-y-6">
@@ -436,7 +332,7 @@ export default function ContractExplorer() {
                 value={searchInput}
                 onChange={(e) => handleSearchInputChange(e.target.value)}
                 className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black"
-                placeholder={getPlaceholderText()}
+                placeholder={placeholderText}
                 required
               />
             </div>
@@ -495,8 +391,8 @@ export default function ContractExplorer() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Created Event</h3>
                 <EventDetails
                   data={events.created.createdEvent}
-                  onOffsetClick={handleOffsetClick}
-                  onContractIdClick={handleContractIdClick}
+                  onOffsetClick={handleItemClick}
+                  onContractIdClick={handleItemClick}
                   currentContractId={searchInput}
                 />
               </div>
@@ -507,8 +403,8 @@ export default function ContractExplorer() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Archived Event</h3>
                 <EventDetails
                   data={events.archived.archivedEvent}
-                  onOffsetClick={handleOffsetClick}
-                  onContractIdClick={handleContractIdClick}
+                  onOffsetClick={handleItemClick}
+                  onContractIdClick={handleItemClick}
                   currentContractId={searchInput}
                 />
               </div>
@@ -591,8 +487,8 @@ export default function ContractExplorer() {
                           <h5 className="font-medium text-gray-900 mb-2">Exercise Event (ID: {nodeId})</h5>
                           <EventDetails
                             data={event.ExercisedTreeEvent.value}
-                            onOffsetClick={handleOffsetClick}
-                            onContractIdClick={handleContractIdClick}
+                            onOffsetClick={handleItemClick}
+                            onContractIdClick={handleItemClick}
                             currentContractId={searchInput}
                           />
                         </div>
@@ -603,8 +499,8 @@ export default function ContractExplorer() {
                           <h5 className="font-medium text-gray-900 mb-2">Create Event (ID: {nodeId})</h5>
                           <EventDetails
                             data={event.CreatedTreeEvent.value}
-                            onOffsetClick={handleOffsetClick}
-                            onContractIdClick={handleContractIdClick}
+                            onOffsetClick={handleItemClick}
+                            onContractIdClick={handleItemClick}
                             currentContractId={searchInput}
                           />
                         </div>
