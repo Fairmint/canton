@@ -21,7 +21,7 @@ const eslintConfig = [
       "**/libs/**"
     ]
   },
-  ...compat.extends("next/core-web-vitals"),
+  ...compat.extends("next/core-web-vitals")
 ];
 
 export default eslintConfig;
