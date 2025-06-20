@@ -16,6 +16,7 @@ export class AbstractClient {
   public provider: ProviderConfigENVFormat; // The selected provider configuration
   private axiosInstance: AxiosInstance;
   private logDir: string;
+  private enableFileLogging: boolean;
 
   constructor(
     config: ProviderConfig,
@@ -46,9 +47,22 @@ export class AbstractClient {
     }
 
     this.axiosInstance = axios.create();
+    
+    // Check if we're in a serverless environment (Vercel, etc.)
+    const isServerless = process.env.VERCEL || process.env.NODE_ENV === 'production';
+    this.enableFileLogging = !isServerless;
+    
     this.logDir = path.join(__dirname, '../../logs');
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
+    
+    // Only try to create logs directory if file logging is enabled
+    if (this.enableFileLogging && !fs.existsSync(this.logDir)) {
+      try {
+        fs.mkdirSync(this.logDir, { recursive: true });
+      } catch (error) {
+        // If we can't create the directory, disable file logging
+        console.warn('Could not create logs directory, disabling file logging:', error);
+        this.enableFileLogging = false;
+      }
     }
   }
 
@@ -124,6 +138,13 @@ export class AbstractClient {
 
   protected async logRequestResponse(url: string, request: any, response: any) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
+    // If file logging is disabled, just log to console
+    if (!this.enableFileLogging) {
+      console.log(`[${timestamp}] ${url}`, { request, response });
+      return;
+    }
+
     const logFile = path.join(this.logDir, `request-${timestamp}.json`);
 
     const logData = {

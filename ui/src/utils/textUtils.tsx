@@ -5,9 +5,18 @@ export const truncatePartyId = (partyId: string): string => {
   if (parts.length !== 2) return partyId;
 
   const [prefix, suffix] = parts;
-  if (suffix.length <= 12) return partyId;
+  
+  // Truncate prefix if longer than 16 characters
+  const truncatedPrefix = prefix.length > 16 
+    ? `${prefix.slice(0, 6)}..${prefix.slice(-6)}`
+    : prefix;
+  
+  // Truncate suffix if longer than 12 characters
+  const truncatedSuffix = suffix.length > 12 
+    ? `${suffix.slice(0, 6)}..${suffix.slice(-6)}`
+    : suffix;
 
-  return `${prefix}::${suffix.slice(0, 6)}..${suffix.slice(-6)}`;
+  return `${truncatedPrefix}::${truncatedSuffix}`;
 };
 
 export const truncateContractId = (contractId: string): string => {
