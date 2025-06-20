@@ -163,10 +163,9 @@ export class JsonApiClient extends AbstractClient {
 
     private async getParties(): Promise<{ partyDetails: Array<{ party: string, isLocal: boolean, localMetadata: { resourceVersion: string, annotations: Record<string, any> }, identityProviderId: string }> }> {
         try {
-            const headers = await this.getHeaders({contentType: 'application/json', includeBearerToken: true});
             return await this.makeGetRequest(
                 `${this.provider.JSON_API.API_URL}/parties`,
-                headers
+                {contentType: 'application/json', includeBearerToken: true}
             );
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -199,10 +198,9 @@ export class JsonApiClient extends AbstractClient {
 
     async getTransactionTreeByOffset(offset: string): Promise<any> {
         try {
-            const headers = await this.getHeaders({contentType: 'application/json', includeBearerToken: true});
             return await this.makeGetRequest(
                 `${this.provider.JSON_API.API_URL}/updates/transaction-tree-by-offset/${offset}?parties=${this.provider.JSON_API.PARTY_ID}`,
-                headers
+                {contentType: 'application/json', includeBearerToken: true}
             );
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -245,9 +243,7 @@ export class JsonApiClient extends AbstractClient {
         eventFormat?: 'verbose' | 'minimal';
         includeCreatedEventBlob?: boolean;
     }): Promise<TransactionTree> {
-        try {
-            const headers = await this.getHeaders({contentType: 'application/json', includeBearerToken: true});
-            
+        try {            
             // Build query parameters
             const queryParams = new URLSearchParams({
                 parties: this.provider.JSON_API.PARTY_ID
@@ -263,7 +259,7 @@ export class JsonApiClient extends AbstractClient {
 
             const response = await this.makeGetRequest<TransactionTree>(
                 `${this.provider.JSON_API.API_URL}/updates/transaction-tree-by-id/${updateId}?${queryParams.toString()}`,
-                headers
+                {contentType: 'application/json', includeBearerToken: true}
             );
             
             await this.logRequestResponse(
