@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-interface EventData {
+export interface EventData {
   templateId: string;
   packageName?: string;
   createdAt?: string;

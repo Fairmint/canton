@@ -2,41 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import EventDetails from './EventDetails';
+import EventDetails, { EventData } from './EventDetails';
 
 interface Provider {
   name: string;
   displayName: string;
 }
 
-interface CreatedEvent {
-  createdEvent: {
-    contractId: string;
-    templateId: string;
-    createArgument: any;
-    signatories: string[];
-    observers: string[];
-    createdAt: string;
-    packageName: string;
-    offset: string;
-  };
-  synchronizerId: string;
-}
-
-interface ArchivedEvent {
-  archivedEvent: {
-    contractId: string;
-    templateId: string;
-    witnessParties: string[];
-    packageName: string;
-    offset: string;
-  };
-  synchronizerId: string;
-}
-
 interface ContractEvents {
-  created?: CreatedEvent;
-  archived?: ArchivedEvent;
+  created?: { createdEvent: EventData; synchronizerId: string };
+  archived?: { archivedEvent: EventData; synchronizerId: string };
 }
 
 interface TransactionTree {
@@ -47,28 +22,10 @@ interface TransactionTree {
     eventsById: {
       [key: string]: {
         ExercisedTreeEvent?: {
-          value: {
-            contractId: string;
-            templateId: string;
-            choice: string;
-            choiceArgument: any;
-            actingParties: string[];
-            witnessParties: string[];
-            exerciseResult: string;
-            packageName: string;
-          };
+          value: EventData;
         };
         CreatedTreeEvent?: {
-          value: {
-            contractId: string;
-            templateId: string;
-            createArgument: any;
-            witnessParties: string[];
-            signatories: string[];
-            observers: string[];
-            createdAt: string;
-            packageName: string;
-          };
+          value: EventData;
         };
       };
     };
