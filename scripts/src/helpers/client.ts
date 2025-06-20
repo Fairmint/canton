@@ -223,6 +223,13 @@ export class TransferAgentClient {
         }
     }
 
+    public async getBearerToken(): Promise<string> {
+        if (!this.bearerToken) {
+            await this.authenticate();
+        }
+        return this.bearerToken || '';
+    }
+
     private async getHeaders(): Promise<Record<string, string>> {
         if (!this.bearerToken) {
             await this.authenticate();

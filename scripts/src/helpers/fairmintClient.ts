@@ -32,10 +32,9 @@ export class FairmintClient {
     }
 
     async authorizeIssuer(contractId: string, issuerPartyId: string): Promise<string> {
-        await this.client.authenticate();
         this.ledger = new Ledger(
             {
-                token: this.client.bearerToken || '',
+                token: await this.client.getBearerToken(),
                 httpBaseUrl: this.client.provider.LEDGER_API_URL.substring(0, this.client.provider.LEDGER_API_URL.length - 2),
                 reconnectThreshold: 10,
                 multiplexQueryStreams: true,
