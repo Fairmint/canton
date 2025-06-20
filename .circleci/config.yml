@@ -84,23 +84,14 @@ jobs:
             # Verify npm version:
             npm -v # Should print "10.9.2".
       - run:
+          name: Install Dependencies
+          command: |
+            npm install
+            cd scripts && npm install && cd ..
+            cd ui && npm install && cd ..
+      - run:
           name: Build and Test
           command: npm run test
-      - run:
-          name: Codegen
-          command: npm run codegen
-      - run:
-          name: Install and Build Scripts
-          command: |
-            cd scripts
-            npm install
-            npm run build
-      - run:
-          name: Install and Build UI
-          command: |
-            cd ui
-            npm install
-            npm run build
       - run:
           name: Lint & Format
           command: |
