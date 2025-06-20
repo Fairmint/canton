@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EventDetails, { EventData } from './EventDetails';
+import TransactionTree, { Transaction } from './TransactionTree';
 
 interface Provider {
   name: string;
@@ -12,26 +13,6 @@ interface Provider {
 interface ContractEvents {
   created?: { createdEvent: EventData; synchronizerId: string };
   archived?: { archivedEvent: EventData; synchronizerId: string };
-}
-
-interface TraceContext {
-  traceparent: string;
-  tracestate: string | null;
-}
-
-interface TransactionEvent {
-  ExercisedTreeEvent?: { value: EventData };
-  CreatedTreeEvent?: { value: EventData };
-}
-
-interface Transaction {
-  updateId: string;
-  effectiveAt: string;
-  offset: number;
-  eventsById: Record<string, TransactionEvent>;
-  synchronizerId: string;
-  recordTime: string;
-  traceContext?: TraceContext;
 }
 
 type SearchType = 'contract' | 'updateId' | 'offset' | null;
@@ -50,7 +31,6 @@ export default function ContractExplorer() {
   const [searchInput, setSearchInput] = useState('');
   const [transactionTree, setTransactionTree] = useState<Transaction | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -359,99 +339,12 @@ export default function ContractExplorer() {
       {loadingTree ? (
         <LoadingSpinner message="Loading transaction tree..." />
       ) : transactionTree && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <div className="px-6 py-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Transaction Tree</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-500">
-                  <strong>Update ID:</strong> {transactionTree.updateId}
-                </p>
-                <p className="text-sm text-gray-500">
-                  <strong>Offset:</strong> {transactionTree.offset}
-                </p>
-                
-                <button
-                  type="button"
-                  onClick={() => setShowDetails(!showDetails)}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  {showDetails ? (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      Hide Details
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      Show Details
-                    </>
-                  )}
-                </button>
-
-                {showDetails && (
-                  <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
-                    <p className="text-sm text-gray-500">
-                      <strong>Synchronizer ID:</strong> {transactionTree.synchronizerId}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      <strong>Effective At:</strong> {new Date(transactionTree.effectiveAt).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      <strong>Record Time:</strong> {new Date(transactionTree.recordTime).toLocaleString()}
-                    </p>
-                    {transactionTree.traceContext && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">
-                          <strong>Trace Context:</strong>
-                        </p>
-                        <div className="ml-4 text-sm text-gray-600">
-                          <p><strong>Traceparent:</strong> {transactionTree.traceContext.traceparent}</p>
-                          <p><strong>Tracestate:</strong> {transactionTree.traceContext.tracestate || 'null'}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <h4 className="text-md font-medium text-gray-900 mb-2">Events</h4>
-                {Object.entries(transactionTree.eventsById).map(([nodeId, event]) => (
-                  <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
-                    {event.ExercisedTreeEvent && (
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-2">Exercise Event (ID: {nodeId})</h5>
-                        <EventDetails
-                          data={event.ExercisedTreeEvent.value}
-                          onOffsetClick={handleItemClick}
-                          onContractIdClick={handleItemClick}
-                          currentContractId={searchInput}
-                        />
-                      </div>
-                    )}
-
-                    {event.CreatedTreeEvent && (
-                      <div>
-                        <h5 className="font-medium text-gray-900 mb-2">Create Event (ID: {nodeId})</h5>
-                        <EventDetails
-                          data={event.CreatedTreeEvent.value}
-                          onOffsetClick={handleItemClick}
-                          onContractIdClick={handleItemClick}
-                          currentContractId={searchInput}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <TransactionTree
+          transaction={transactionTree}
+          onOffsetClick={handleItemClick}
+          onContractIdClick={handleItemClick}
+          currentContractId={searchInput}
+        />
       )}
 
       {/* No results message */}
