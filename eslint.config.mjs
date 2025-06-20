@@ -17,7 +17,8 @@ const eslintConfig = [
       "**/dist/**",
       "**/build/**",
       "**/.daml/**",
-      "**/logs/**"
+      "**/logs/**",
+      "**/libs/**"
     ]
   },
   ...compat.extends("next/core-web-vitals"),

@@ -6,8 +6,8 @@
     "docker": "docker pull digitalasset/canton-open-source && docker run --rm -it digitalasset/canton-open-source --no-tty -C canton.participants.p.ledger-api.port=1234",
     "sandbox": "npm run build && cd src/Sandbox && daml start",
     "test": "npm run build && cd src/Test && daml test",
-    "lint": "cd scripts && npm run lint && cd ../ui && npm run lint",
-    "lint:check": "cd scripts && npm run lint && cd ../ui && npm run lint:check",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

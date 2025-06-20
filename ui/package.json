@@ -5,9 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "npm run lint:check -- --fix",
-    "lint:check": "npx --prefix .. eslint . --config ../eslint.config.mjs"
+    "start": "next start"
   },
   "dependencies": {
     "@fairmint/canton-scripts": "file:../scripts",
