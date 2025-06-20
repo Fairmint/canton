@@ -12,7 +12,8 @@
   "dependencies": {
     "axios": "^1.6.7",
     "dotenv": "^16.4.5",
-    "@daml/ledger": "^3.3.0-snapshot.20250528.13806.0.v3cd439fb"
+    "@daml/ledger": "^3.3.0-snapshot.20250528.13806.0.v3cd439fb",
+    "@daml/types": "^3.3.0-snapshot.20250528.13806.0.v3cd439fb"
   },
   "devDependencies": {
     "@types/axios": "^0.14.4",

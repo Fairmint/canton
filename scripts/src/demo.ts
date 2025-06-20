@@ -21,14 +21,14 @@ async function main() {
             'Acme Inc',
             15_000_000,
             issuerPartyId,
-            {
-                amount: 1.42,
-                inputs: [],
-                context: {
-                    amuletRules: '',
-                },
-                walletProvider: '5N DevNet'
-            }
+            // {
+            //     amount: 1.42,
+            //     inputs: [],
+            //     context: {
+            //         amuletRules: '',
+            //     },
+            //     walletProvider: '5N DevNet'
+            // }
         );
 
         // Pre-req: Create parties for Bob and Alice

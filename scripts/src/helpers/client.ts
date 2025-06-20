@@ -193,7 +193,7 @@ export class TransferAgentClient {
         }
     }
 
-    private async authenticate(): Promise<string> {
+    public async authenticate(): Promise<string> {
         const formData = new URLSearchParams();
         formData.append('grant_type', 'client_credentials');
         formData.append('client_id', this.provider.CLIENT_ID);
