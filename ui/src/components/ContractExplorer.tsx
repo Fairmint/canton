@@ -14,28 +14,24 @@ interface ContractEvents {
   archived?: { archivedEvent: EventData; synchronizerId: string };
 }
 
-interface TransactionTree {
-  transaction: {
-    updateId: string;
-    effectiveAt: string;
-    offset: number;
-    eventsById: {
-      [key: string]: {
-        ExercisedTreeEvent?: {
-          value: EventData;
-        };
-        CreatedTreeEvent?: {
-          value: EventData;
-        };
-      };
-    };
-    synchronizerId: string;
-    recordTime: string;
-    traceContext?: {
-      traceparent: string;
-      tracestate: string | null;
-    };
-  };
+interface TraceContext {
+  traceparent: string;
+  tracestate: string | null;
+}
+
+interface TransactionEvent {
+  ExercisedTreeEvent?: { value: EventData };
+  CreatedTreeEvent?: { value: EventData };
+}
+
+interface Transaction {
+  updateId: string;
+  effectiveAt: string;
+  offset: number;
+  eventsById: Record<string, TransactionEvent>;
+  synchronizerId: string;
+  recordTime: string;
+  traceContext?: TraceContext;
 }
 
 type SearchType = 'contract' | 'updateId' | 'offset' | null;
@@ -52,7 +48,7 @@ export default function ContractExplorer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
-  const [transactionTree, setTransactionTree] = useState<TransactionTree | null>(null);
+  const [transactionTree, setTransactionTree] = useState<Transaction | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
@@ -238,7 +234,7 @@ export default function ContractExplorer() {
       }
       
       const data = await fetchData(url, setLoadingTree);
-      if (data) setTransactionTree(data);
+      if (data) setTransactionTree(data.transaction);
     }
   };
 
@@ -369,10 +365,10 @@ export default function ContractExplorer() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-500">
-                  <strong>Update ID:</strong> {transactionTree.transaction.updateId}
+                  <strong>Update ID:</strong> {transactionTree.updateId}
                 </p>
                 <p className="text-sm text-gray-500">
-                  <strong>Offset:</strong> {transactionTree.transaction.offset}
+                  <strong>Offset:</strong> {transactionTree.offset}
                 </p>
                 
                 <button
@@ -400,22 +396,22 @@ export default function ContractExplorer() {
                 {showDetails && (
                   <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
                     <p className="text-sm text-gray-500">
-                      <strong>Synchronizer ID:</strong> {transactionTree.transaction.synchronizerId}
+                      <strong>Synchronizer ID:</strong> {transactionTree.synchronizerId}
                     </p>
                     <p className="text-sm text-gray-500">
-                      <strong>Effective At:</strong> {new Date(transactionTree.transaction.effectiveAt).toLocaleString()}
+                      <strong>Effective At:</strong> {new Date(transactionTree.effectiveAt).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-500">
-                      <strong>Record Time:</strong> {new Date(transactionTree.transaction.recordTime).toLocaleString()}
+                      <strong>Record Time:</strong> {new Date(transactionTree.recordTime).toLocaleString()}
                     </p>
-                    {transactionTree.transaction.traceContext && (
+                    {transactionTree.traceContext && (
                       <div className="mt-2">
                         <p className="text-sm text-gray-500">
                           <strong>Trace Context:</strong>
                         </p>
                         <div className="ml-4 text-sm text-gray-600">
-                          <p><strong>Traceparent:</strong> {transactionTree.transaction.traceContext.traceparent}</p>
-                          <p><strong>Tracestate:</strong> {transactionTree.transaction.traceContext.tracestate || 'null'}</p>
+                          <p><strong>Traceparent:</strong> {transactionTree.traceContext.traceparent}</p>
+                          <p><strong>Tracestate:</strong> {transactionTree.traceContext.tracestate || 'null'}</p>
                         </div>
                       </div>
                     )}
@@ -425,7 +421,7 @@ export default function ContractExplorer() {
 
               <div>
                 <h4 className="text-md font-medium text-gray-900 mb-2">Events</h4>
-                {Object.entries(transactionTree.transaction.eventsById).map(([nodeId, event]) => (
+                {Object.entries(transactionTree.eventsById).map(([nodeId, event]) => (
                   <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
                     {event.ExercisedTreeEvent && (
                       <div>
