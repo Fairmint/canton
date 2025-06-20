@@ -10,10 +10,12 @@ export async function GET() {
   try {
     const providers = config.getAllProviders();
 
-    // Return only the provider names for security (don't expose full config)
+    // Return provider names and IDs for security (don't expose full config)
     const providerNames = providers.map(provider => ({
       name: provider.PROVIDER_NAME,
       displayName: provider.PROVIDER_NAME, // You could add a display name field to the config if needed
+      partyId: provider.VALIDATOR_API?.PARTY_ID,
+      userId: provider.VALIDATOR_API?.USER_ID,
     }));
 
     return NextResponse.json(providerNames);

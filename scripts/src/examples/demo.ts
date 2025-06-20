@@ -1,4 +1,4 @@
-import { ProviderConfig, FairmintClient } from './clients';
+import { ProviderConfig, FairmintClient } from '../clients';
 
 async function main() {
   try {

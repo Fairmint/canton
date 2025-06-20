@@ -4,10 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EventDetails, { EventData } from './EventDetails';
 import TransactionTree, { Transaction } from './TransactionTree';
+import AccountInfo from './AccountInfo';
 
 interface Provider {
   name: string;
   displayName: string;
+  partyId: string;
+  userId: string;
 }
 
 interface ContractEvents {
@@ -38,6 +41,8 @@ export default function ContractExplorer() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [loadingProviders, setLoadingProviders] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<any>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
   // URL management helper
   const updateURL = (searchTerm?: string, provider?: string) => {
@@ -219,6 +224,13 @@ export default function ContractExplorer() {
     }
   }, [searchInput, shouldFetch, isClient, selectedProvider, performSearch]);
 
+  // Fetch wallet balance when selected provider changes
+  useEffect(() => {
+    if (selectedProvider && isClient) {
+      fetchWalletBalance(selectedProvider);
+    }
+  }, [selectedProvider, isClient]);
+
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
     if (typeof window !== 'undefined') {
@@ -233,6 +245,33 @@ export default function ContractExplorer() {
 
     if (searchInput) {
       setShouldFetch(true);
+    }
+
+    // Fetch wallet balance for the new provider
+    fetchWalletBalance(provider);
+  };
+
+  // Fetch wallet balance for the selected provider
+  const fetchWalletBalance = async (provider: string) => {
+    if (!provider) return;
+
+    setLoadingBalance(true);
+    try {
+      const response = await fetch(
+        `/api/wallet-balance?provider=${encodeURIComponent(provider)}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setWalletBalance(data);
+      } else {
+        console.error('Failed to fetch wallet balance');
+        setWalletBalance(null);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+      setWalletBalance(null);
+    } finally {
+      setLoadingBalance(false);
     }
   };
 
@@ -255,6 +294,11 @@ export default function ContractExplorer() {
     ? `${searchTypeLabel} detected`
     : 'Enter contract ID, update ID, or offset';
 
+  // Get the selected provider's details
+  const selectedProviderDetails = providers.find(
+    p => p.name === selectedProvider
+  );
+
   // Loading component
   const LoadingSpinner = ({ message }: { message: string }) => (
     <div className='text-center py-4'>{message}</div>
@@ -276,26 +320,52 @@ export default function ContractExplorer() {
     <div className='space-y-6'>
       {/* Unified Search Form */}
       <form onSubmit={handleSubmit} className='space-y-4'>
-        <div>
-          <label
-            htmlFor='searchInput'
-            className='block text-sm font-medium text-gray-700'
-          >
-            Search
-          </label>
-          <div className='mt-1 flex gap-2'>
-            <div className='flex-1'>
-              <input
-                type='text'
-                id='searchInput'
-                value={searchInput}
-                onChange={e => handleSearchInputChange(e.target.value)}
-                className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black'
-                placeholder={placeholderText}
-                required
-              />
+        <div className='grid grid-cols-1 lg:grid-cols-4 gap-4'>
+          {/* Left Column - Search Elements */}
+          <div className='lg:col-span-3 space-y-4'>
+            <div>
+              <label
+                htmlFor='searchInput'
+                className='block text-sm font-medium text-gray-700'
+              >
+                Search
+              </label>
+              <div className='mt-1'>
+                <input
+                  type='text'
+                  id='searchInput'
+                  value={searchInput}
+                  onChange={e => handleSearchInputChange(e.target.value)}
+                  className='shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-black'
+                  placeholder={placeholderText}
+                  required
+                />
+              </div>
+              {searchTypeLabel && (
+                <p className='mt-1 text-sm text-gray-500'>
+                  Search by: {searchTypeLabel}
+                </p>
+              )}
             </div>
-            <div className='w-48'>
+            <div>
+              <button
+                type='submit'
+                className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              >
+                Search
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column - Provider Elements */}
+          <div className='lg:col-span-1'>
+            <label
+              htmlFor='providerSelect'
+              className='block text-sm font-medium text-gray-700'
+            >
+              Provider
+            </label>
+            <div className='mt-1'>
               <select
                 id='providerSelect'
                 value={selectedProvider}
@@ -316,20 +386,14 @@ export default function ContractExplorer() {
                 )}
               </select>
             </div>
+            <div className='mt-2 text-xs text-gray-600 space-y-1'>
+              <AccountInfo
+                selectedProviderDetails={selectedProviderDetails}
+                walletBalance={walletBalance}
+                loadingBalance={loadingBalance}
+              />
+            </div>
           </div>
-          {searchTypeLabel && (
-            <p className='mt-1 text-sm text-gray-500'>
-              Search by: {searchTypeLabel}
-            </p>
-          )}
-        </div>
-        <div>
-          <button
-            type='submit'
-            className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-          >
-            Search
-          </button>
         </div>
       </form>
 

@@ -4,7 +4,7 @@
   "description": "Client for interacting with the Transfer Agent API",
   "main": "dist/demo.js",
   "scripts": {
-    "start:demo": "ts-node src/demo.ts",
+    "start:demo": "ts-node src/examples/demo.ts",
     "upload:package": "ts-node src/uploadPackage.ts",
     "build": "tsc",
     "tailLogs": "stern participant --kubeconfig .secrets/devnet --config ./stern.yaml"
