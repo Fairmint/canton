@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { truncatePartyId, truncateContractId, truncateTemplateId, TruncatedText } from '../utils/textUtils';
+import {
+  truncatePartyId,
+  truncateContractId,
+  truncateTemplateId,
+  TruncatedText,
+} from '../utils/textUtils';
 
 export interface EventData {
   templateId: string;

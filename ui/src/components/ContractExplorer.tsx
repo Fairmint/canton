@@ -246,7 +246,7 @@ export default function ContractExplorer() {
     if (searchInput) {
       setShouldFetch(true);
     }
-    
+
     // Fetch wallet balance for the new provider
     fetchWalletBalance(provider);
   };
@@ -254,10 +254,12 @@ export default function ContractExplorer() {
   // Fetch wallet balance for the selected provider
   const fetchWalletBalance = async (provider: string) => {
     if (!provider) return;
-    
+
     setLoadingBalance(true);
     try {
-      const response = await fetch(`/api/wallet-balance?provider=${encodeURIComponent(provider)}`);
+      const response = await fetch(
+        `/api/wallet-balance?provider=${encodeURIComponent(provider)}`
+      );
       if (response.ok) {
         const data = await response.json();
         setWalletBalance(data);
@@ -293,7 +295,9 @@ export default function ContractExplorer() {
     : 'Enter contract ID, update ID, or offset';
 
   // Get the selected provider's details
-  const selectedProviderDetails = providers.find(p => p.name === selectedProvider);
+  const selectedProviderDetails = providers.find(
+    p => p.name === selectedProvider
+  );
 
   // Loading component
   const LoadingSpinner = ({ message }: { message: string }) => (

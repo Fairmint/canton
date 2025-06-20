@@ -12,7 +12,7 @@ interface ErrorResponse {
 interface WalletBalanceResponse {
   round: number;
   effective_unlocked_qty: string;
-  effective_locked_qty: string; 
+  effective_locked_qty: string;
   total_holding_fees: string;
 }
 
@@ -20,7 +20,6 @@ export class ValidatorApiClient extends AbstractClient {
   constructor(config: ProviderConfig, providerName?: string) {
     super(config, 'VALIDATOR_API', providerName);
   }
-
 
   async getWalletBalance(): Promise<WalletBalanceResponse> {
     if (!this.provider.VALIDATOR_API) {
@@ -41,8 +40,16 @@ export class ValidatorApiClient extends AbstractClient {
 
       return response as WalletBalanceResponse;
     } catch (error: unknown) {
-      if (error instanceof Error && 'response' in error && (error.response as ErrorResponse)?.data) {
-        const errorData = JSON.stringify((error.response as ErrorResponse).data, null, 2);
+      if (
+        error instanceof Error &&
+        'response' in error &&
+        (error.response as ErrorResponse)?.data
+      ) {
+        const errorData = JSON.stringify(
+          (error.response as ErrorResponse).data,
+          null,
+          2
+        );
         throw new Error(`Failed to get wallet balance: ${errorData}`);
       }
       throw error;
