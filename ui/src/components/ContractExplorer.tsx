@@ -83,6 +83,12 @@ interface TransactionTree {
 
 type SearchType = 'contract' | 'updateId' | 'offset' | null;
 
+const SEARCH_TYPE_LABELS: Record<NonNullable<SearchType>, string> = {
+  contract: 'Contract ID',
+  updateId: 'Update ID',
+  offset: 'Offset'
+};
+
 export default function ContractExplorer() {
   const searchParams = useSearchParams();
   const [events, setEvents] = useState<ContractEvents | null>(null);
@@ -123,6 +129,23 @@ export default function ContractExplorer() {
     setEvents(null);
     setTransactionTree(null);
     setError(null);
+  };
+
+  // Generic fetch helper
+  const fetchData = async (url: string, setLoadingState: (loading: boolean) => void) => {
+    setLoadingState(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status} ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return null;
+    } finally {
+      setLoadingState(false);
+    }
   };
 
   // Handle client-side initialization and URL params
@@ -243,58 +266,22 @@ export default function ContractExplorer() {
     clearResults();
 
     if (searchType === 'contract') {
-      await fetchEvents();
-    } else {
-      await fetchTransactionTree(searchType === 'updateId' ? 'byId' : 'byOffset');
-    }
-  };
-
-  const fetchEvents = async () => {
-    setLoading(true);
-    try {
       const params = new URLSearchParams({ contractId: searchInput });
-      if (selectedProvider) {
-        params.append('provider', selectedProvider);
-      }
-
-      const response = await fetch(`/api/events?${params}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setEvents(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTransactionTree = async (type: 'byId' | 'byOffset') => {
-    setLoadingTree(true);
-    try {
-      let url = type === 'byId' 
+      if (selectedProvider) params.append('provider', selectedProvider);
+      const data = await fetchData(`/api/events?${params}`, setLoading);
+      if (data) setEvents(data);
+    } else {
+      const isById = searchType === 'updateId';
+      let url = isById 
         ? `/api/transaction-tree-by-id/${searchInput}?eventFormat=verbose`
         : `/api/transaction-tree/${searchInput}`;
       
       if (selectedProvider) {
-        url += `${type === 'byId' ? '&' : '?'}provider=${encodeURIComponent(selectedProvider)}`;
+        url += `${isById ? '&' : '?'}provider=${encodeURIComponent(selectedProvider)}`;
       }
       
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch transaction tree: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setTransactionTree(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoadingTree(false);
+      const data = await fetchData(url, setLoadingTree);
+      if (data) setTransactionTree(data);
     }
   };
 
@@ -312,9 +299,28 @@ export default function ContractExplorer() {
   };
 
   const searchType = getSearchType(searchInput);
-  const placeholderText = searchType 
-    ? `${searchType === 'contract' ? 'Contract ID' : searchType === 'updateId' ? 'Update ID' : 'Offset'} detected`
+  const searchTypeLabel = searchType ? SEARCH_TYPE_LABELS[searchType] : null;
+  const placeholderText = searchTypeLabel 
+    ? `${searchTypeLabel} detected`
     : 'Enter contract ID, update ID, or offset';
+
+  // Loading component
+  const LoadingSpinner = ({ message }: { message: string }) => (
+    <div className="text-center py-4">{message}</div>
+  );
+
+  // Event card component
+  const EventCard = ({ title, data }: { title: string; data: any }) => (
+    <div className="mb-4 p-4 bg-gray-50 rounded">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
+      <EventDetails
+        data={data}
+        onOffsetClick={handleItemClick}
+        onContractIdClick={handleItemClick}
+        currentContractId={searchInput}
+      />
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -358,9 +364,9 @@ export default function ContractExplorer() {
               </select>
             </div>
           </div>
-          {searchType && (
+          {searchTypeLabel && (
             <p className="mt-1 text-sm text-gray-500">
-              Search by: {searchType === 'contract' ? 'Contract ID' : searchType === 'updateId' ? 'Update ID' : 'Offset'}
+              Search by: {searchTypeLabel}
             </p>
           )}
         </div>
@@ -382,32 +388,15 @@ export default function ContractExplorer() {
 
       {/* Contract Events Results */}
       {loading ? (
-        <div className="text-center py-4">Loading events...</div>
+        <LoadingSpinner message="Loading events..." />
       ) : events ? (
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <div className="px-6 py-4">
             {events.created && (
-              <div className="mb-4 p-4 bg-gray-50 rounded">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Created Event</h3>
-                <EventDetails
-                  data={events.created.createdEvent}
-                  onOffsetClick={handleItemClick}
-                  onContractIdClick={handleItemClick}
-                  currentContractId={searchInput}
-                />
-              </div>
+              <EventCard title="Created Event" data={events.created.createdEvent} />
             )}
-
             {events.archived && (
-              <div className="mb-4 p-4 bg-gray-50 rounded">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Archived Event</h3>
-                <EventDetails
-                  data={events.archived.archivedEvent}
-                  onOffsetClick={handleItemClick}
-                  onContractIdClick={handleItemClick}
-                  currentContractId={searchInput}
-                />
-              </div>
+              <EventCard title="Archived Event" data={events.archived.archivedEvent} />
             )}
           </div>
         </div>
@@ -415,7 +404,7 @@ export default function ContractExplorer() {
 
       {/* Transaction Tree Results */}
       {loadingTree ? (
-        <div className="text-center py-4">Loading transaction tree...</div>
+        <LoadingSpinner message="Loading transaction tree..." />
       ) : transactionTree && (
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <div className="px-6 py-4">
@@ -479,35 +468,33 @@ export default function ContractExplorer() {
 
               <div>
                 <h4 className="text-md font-medium text-gray-900 mb-2">Events</h4>
-                {Object.entries(transactionTree.transaction.eventsById).map(([nodeId, event]) => {
-                  return (
-                    <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
-                      {event.ExercisedTreeEvent && (
-                        <div>
-                          <h5 className="font-medium text-gray-900 mb-2">Exercise Event (ID: {nodeId})</h5>
-                          <EventDetails
-                            data={event.ExercisedTreeEvent.value}
-                            onOffsetClick={handleItemClick}
-                            onContractIdClick={handleItemClick}
-                            currentContractId={searchInput}
-                          />
-                        </div>
-                      )}
+                {Object.entries(transactionTree.transaction.eventsById).map(([nodeId, event]) => (
+                  <div key={nodeId} className="mb-4 p-4 bg-gray-50 rounded">
+                    {event.ExercisedTreeEvent && (
+                      <div>
+                        <h5 className="font-medium text-gray-900 mb-2">Exercise Event (ID: {nodeId})</h5>
+                        <EventDetails
+                          data={event.ExercisedTreeEvent.value}
+                          onOffsetClick={handleItemClick}
+                          onContractIdClick={handleItemClick}
+                          currentContractId={searchInput}
+                        />
+                      </div>
+                    )}
 
-                      {event.CreatedTreeEvent && (
-                        <div>
-                          <h5 className="font-medium text-gray-900 mb-2">Create Event (ID: {nodeId})</h5>
-                          <EventDetails
-                            data={event.CreatedTreeEvent.value}
-                            onOffsetClick={handleItemClick}
-                            onContractIdClick={handleItemClick}
-                            currentContractId={searchInput}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    {event.CreatedTreeEvent && (
+                      <div>
+                        <h5 className="font-medium text-gray-900 mb-2">Create Event (ID: {nodeId})</h5>
+                        <EventDetails
+                          data={event.CreatedTreeEvent.value}
+                          onOffsetClick={handleItemClick}
+                          onContractIdClick={handleItemClick}
+                          currentContractId={searchInput}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
