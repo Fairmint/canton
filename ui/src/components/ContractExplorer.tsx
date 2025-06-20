@@ -40,6 +40,8 @@ export default function ContractExplorer() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [loadingProviders, setLoadingProviders] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<any>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
   // URL management helper
   const updateURL = (searchTerm?: string, provider?: string) => {
@@ -221,6 +223,13 @@ export default function ContractExplorer() {
     }
   }, [searchInput, shouldFetch, isClient, selectedProvider, performSearch]);
 
+  // Fetch wallet balance when selected provider changes
+  useEffect(() => {
+    if (selectedProvider && isClient) {
+      fetchWalletBalance(selectedProvider);
+    }
+  }, [selectedProvider, isClient]);
+
   const handleSearchInputChange = (value: string) => {
     setSearchInput(value);
     if (typeof window !== 'undefined') {
@@ -235,6 +244,31 @@ export default function ContractExplorer() {
 
     if (searchInput) {
       setShouldFetch(true);
+    }
+    
+    // Fetch wallet balance for the new provider
+    fetchWalletBalance(provider);
+  };
+
+  // Fetch wallet balance for the selected provider
+  const fetchWalletBalance = async (provider: string) => {
+    if (!provider) return;
+    
+    setLoadingBalance(true);
+    try {
+      const response = await fetch(`/api/wallet-balance?provider=${encodeURIComponent(provider)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setWalletBalance(data);
+      } else {
+        console.error('Failed to fetch wallet balance');
+        setWalletBalance(null);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+      setWalletBalance(null);
+    } finally {
+      setLoadingBalance(false);
     }
   };
 
@@ -323,7 +357,42 @@ export default function ContractExplorer() {
               <div className='mt-2 text-xs text-gray-600 space-y-1'>
                 <div>Party ID: <span className='font-mono'>{selectedProviderDetails?.partyId}</span></div>
                 <div>User ID: <span className='font-mono'>{selectedProviderDetails?.userId}</span></div>
-                <div>Balance: <span className='font-mono'>[placeholder]</span></div>
+                <div>Balance: <span className='font-mono'>
+                  {loadingBalance ? (
+                    'Loading...'
+                  ) : walletBalance ? (
+                    `${walletBalance.effective_unlocked_qty} CC`
+                  ) : (
+                    'N/A'
+                  )}
+                </span></div>
+                <div>Locked balance: <span className='font-mono'>
+                  {loadingBalance ? (
+                    'Loading...'
+                  ) : walletBalance ? (
+                    `${walletBalance.effective_locked_qty} CC`
+                  ) : (
+                    'N/A'
+                  )}
+                </span></div>
+                <div>Holding fees: <span className='font-mono'>
+                  {loadingBalance ? (
+                    'Loading...'
+                  ) : walletBalance ? (
+                    `${walletBalance.total_holding_fees} CC`
+                  ) : (
+                    'N/A'
+                  )}
+                </span></div>
+                <div>Round: <span className='font-mono'>
+                  {loadingBalance ? (
+                    'Loading...'
+                  ) : walletBalance ? (
+                    `${walletBalance.round}`
+                  ) : (
+                    'N/A'
+                  )}
+                </span></div>
               </div>
             </div>
           </div>

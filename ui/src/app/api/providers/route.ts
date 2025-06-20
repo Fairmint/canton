@@ -14,8 +14,8 @@ export async function GET() {
     const providerNames = providers.map(provider => ({
       name: provider.PROVIDER_NAME,
       displayName: provider.PROVIDER_NAME, // You could add a display name field to the config if needed
-      partyId: provider.VALIDATOR_API.PARTY_ID,
-      userId: provider.VALIDATOR_API.USER_ID,
+      partyId: provider.VALIDATOR_API?.PARTY_ID,
+      userId: provider.VALIDATOR_API?.USER_ID,
     }));
 
     return NextResponse.json(providerNames);

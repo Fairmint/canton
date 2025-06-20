@@ -23,6 +23,10 @@ export class ValidatorApiClient extends AbstractClient {
 
 
   async getWalletBalance(): Promise<WalletBalanceResponse> {
+    if (!this.provider.VALIDATOR_API) {
+      throw new Error('Validator API configuration is missing');
+    }
+
     try {
       const response = await this.makeGetRequest(
         `${this.provider.VALIDATOR_API.API_URL}/api/validator/v0/wallet/balance`,
